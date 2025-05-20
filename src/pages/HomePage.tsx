@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Image, Palette, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import StyleCarousel from "@/components/styles/StyleCarousel";
 
 export default function HomePage() {
   return (
@@ -38,6 +39,25 @@ export default function HomePage() {
         {/* Decoration elements */}
         <div className="absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-designer-purple/10 blur-3xl" />
         <div className="absolute -right-20 top-20 h-72 w-72 rounded-full bg-designer-teal/10 blur-3xl" />
+      </section>
+
+      <section className="py-10">
+        <div className="container">
+          <h2 className="mb-6 text-center text-3xl font-bold tracking-tight sm:text-4xl">
+            Estilos de Background
+          </h2>
+          <p className="text-center mb-8 text-muted-foreground max-w-2xl mx-auto">
+            Explore nossa coleção de estilos de imagens para gerar fundos impressionantes para seus projetos.
+          </p>
+          <StyleCarousel />
+          <div className="mt-8 text-center">
+            <Link to="/styles">
+              <Button variant="outline" size="lg">
+                Ver todos os estilos
+              </Button>
+            </Link>
+          </div>
+        </div>
       </section>
 
       <section className="py-20">

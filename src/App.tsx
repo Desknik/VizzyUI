@@ -9,25 +9,38 @@ import Index from "./pages/Index";
 import GradientsPage from "./pages/GradientsPage";
 import AIBackgroundsPage from "./pages/AIBackgroundsPage";
 import NotFound from "./pages/NotFound";
+import { AuthProvider } from "./hooks/useAuth";
+import StylesListPage from "./pages/StylesListPage";
+import StyleDetailPage from "./pages/StyleDetailPage";
+import CreateImagePage from "./pages/CreateImagePage";
+import UserHistoryPage from "./pages/UserHistoryPage";
+import AuthPage from "./pages/AuthPage";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/gradients" element={<GradientsPage />} />
-            <Route path="/ai-backgrounds" element={<AIBackgroundsPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/gradients" element={<GradientsPage />} />
+              <Route path="/ai-backgrounds" element={<AIBackgroundsPage />} />
+              <Route path="/styles" element={<StylesListPage />} />
+              <Route path="/styles/:styleId" element={<StyleDetailPage />} />
+              <Route path="/create-image" element={<CreateImagePage />} />
+              <Route path="/history" element={<UserHistoryPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

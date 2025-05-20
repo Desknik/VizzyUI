@@ -9,7 +9,101 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      background_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          is_public: boolean
+          prompt: string
+          style_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          is_public?: boolean
+          prompt: string
+          style_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_public?: boolean
+          prompt?: string
+          style_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "background_images_style_id_fkey"
+            columns: ["style_id"]
+            isOneToOne: false
+            referencedRelation: "background_styles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      background_styles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          preview_image: string | null
+          prompt: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          preview_image?: string | null
+          prompt: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          preview_image?: string | null
+          prompt?: string
+        }
+        Relationships: []
+      }
+      gradients: {
+        Row: {
+          angle: number
+          colors: Json
+          created_at: string
+          id: string
+          is_public: boolean
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          angle?: number
+          colors: Json
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          angle?: number
+          colors?: Json
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
