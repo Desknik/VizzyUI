@@ -7,10 +7,17 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Copy, Download, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface GradientColor {
   color: string;
   position: number;
+}
+
+interface GradientPreset {
+  name: string;
+  colors: GradientColor[];
+  angle: number;
 }
 
 export default function GradientsPage() {
@@ -21,6 +28,68 @@ export default function GradientsPage() {
     { color: "#9b87f5", position: 0 },
     { color: "#4EB3AF", position: 100 },
   ]);
+
+  const gradientPresets: GradientPreset[] = [
+    {
+      name: "Roxo ao Teal",
+      colors: [
+        { color: "#9b87f5", position: 0 },
+        { color: "#4EB3AF", position: 100 },
+      ],
+      angle: 90,
+    },
+    {
+      name: "Pôr do Sol",
+      colors: [
+        { color: "#FF9A8B", position: 0 },
+        { color: "#FF6A88", position: 60 },
+        { color: "#FF99AC", position: 100 },
+      ],
+      angle: 45,
+    },
+    {
+      name: "Oceano Profundo",
+      colors: [
+        { color: "#0F2027", position: 0 },
+        { color: "#203A43", position: 50 },
+        { color: "#2C5364", position: 100 },
+      ],
+      angle: 180,
+    },
+    {
+      name: "Aurora Boreal",
+      colors: [
+        { color: "#4facfe", position: 0 },
+        { color: "#00f2fe", position: 100 },
+      ],
+      angle: 135,
+    },
+    {
+      name: "Verão Tropical",
+      colors: [
+        { color: "#ff9a9e", position: 0 },
+        { color: "#fad0c4", position: 100 },
+      ],
+      angle: 90,
+    },
+    {
+      name: "Limão e Menta",
+      colors: [
+        { color: "#a8ff78", position: 0 },
+        { color: "#78ffd6", position: 100 },
+      ],
+      angle: 60,
+    },
+  ];
+
+  const applyPreset = (preset: GradientPreset) => {
+    setColors([...preset.colors]);
+    setAngle(preset.angle);
+    toast({
+      title: "Preset aplicado",
+      description: `Gradiente "${preset.name}" aplicado com sucesso.`,
+    });
+  };
 
   const addColor = () => {
     if (colors.length < 5) {
@@ -135,6 +204,31 @@ export default function GradientsPage() {
           <p className="mt-2 text-lg text-muted-foreground">
             Crie gradientes impressionantes para seus projetos
           </p>
+        </div>
+
+        <div className="mb-8">
+          <h2 className="mb-4 text-xl font-semibold">Gradientes Pré-definidos</h2>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            {gradientPresets.map((preset, index) => (
+              <Card 
+                key={index} 
+                className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
+                onClick={() => applyPreset(preset)}
+              >
+                <div 
+                  className="h-24 w-full" 
+                  style={{
+                    background: `linear-gradient(${preset.angle}deg, ${preset.colors
+                      .map((color) => `${color.color} ${color.position}%`)
+                      .join(", ")})`,
+                  }}
+                ></div>
+                <CardContent className="p-3">
+                  <p className="text-sm font-medium text-center">{preset.name}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-8 md:grid-cols-5">
