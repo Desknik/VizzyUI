@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import Index from "./pages/Index";
 import GradientsPage from "./pages/GradientsPage";
-import AIBackgroundsPage from "./pages/AIBackgroundsPage";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./hooks/useAuth";
 import StylesListPage from "./pages/StylesListPage";
@@ -29,7 +28,6 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/gradients" element={<GradientsPage />} />
-              <Route path="/ai-backgrounds" element={<AIBackgroundsPage />} />
               <Route path="/styles" element={<StylesListPage />} />
               <Route path="/styles/:styleId" element={<StyleDetailPage />} />
               <Route path="/create-image" element={<CreateImagePage />} />

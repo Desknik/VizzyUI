@@ -51,7 +51,7 @@ export default function Navbar() {
               <span>Gradientes</span>
             </Button>
           </Link>
-          <Link to="/ai-backgrounds">
+          <Link to="/styles">
             <Button variant="ghost" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
               <span>AI Backgrounds</span>

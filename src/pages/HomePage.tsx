@@ -26,7 +26,7 @@ export default function HomePage() {
                   Criar Gradientes
                 </Button>
               </Link>
-              <Link to="/ai-backgrounds">
+              <Link to="/styles">
                 <Button size="lg" variant="outline" className="gap-2">
                   <Image className="h-5 w-5" />
                   Backgrounds com IA
@@ -99,7 +99,7 @@ export default function HomePage() {
                   Utilize inteligência artificial para gerar backgrounds únicos baseados em estilos 
                   predefinidos ou em imagens de referência.
                 </p>
-                <Link to="/ai-backgrounds">
+                <Link to="/styles">
                   <Button className="mt-4" variant="secondary">Criar com IA</Button>
                 </Link>
               </CardContent>
@@ -124,7 +124,7 @@ export default function HomePage() {
                   Criar Gradientes
                 </Button>
               </Link>
-              <Link to="/ai-backgrounds">
+              <Link to="/styles">
                 <Button size="lg" variant="outline" className="gap-2">
                   <Sparkles className="h-5 w-5" />
                   Backgrounds com IA
