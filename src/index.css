@@ -107,4 +107,20 @@
   .style-tag {
     @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
   }
+
+  .gradient-name {
+    @apply absolute inset-0 flex items-center justify-center font-bold text-xl text-white transition-all duration-300 drop-shadow-md;
+  }
+  
+  .gradient-card:hover .gradient-name {
+    @apply bg-clip-text text-transparent;
+  }
+  
+  .gradient-card:hover .gradient-preview {
+    @apply bg-white !important;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+  }
 }

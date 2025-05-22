@@ -23,7 +23,7 @@ interface GradientPreset {
 export default function GradientsPage() {
   const { toast } = useToast();
   const [angle, setAngle] = useState(90);
-  const [outputType, setOutputType] = useState<"css" | "tailwind">("css");
+  const [outputType, setOutputType] = useState<"css" | "tailwind" | "text-gradient">("css");
   const [colors, setColors] = useState<GradientColor[]>([
     { color: "#9b87f5", position: 0 },
     { color: "#4EB3AF", position: 100 },
@@ -157,8 +157,31 @@ export default function GradientsPage() {
     }to-[${sortedColors[sortedColors.length - 1].color}]`;
   };
 
+  const generateTextGradient = () => {
+    const sortedColors = [...colors].sort((a, b) => a.position - b.position);
+    return `
+/* CSS */
+background: linear-gradient(${angle}deg, ${sortedColors
+      .map((color) => `${color.color} ${color.position}%`)
+      .join(", ")});
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+
+/* Tailwind */
+${generateTailwind()} bg-clip-text text-transparent
+`;
+  };
+
   const copyToClipboard = () => {
-    const code = outputType === "css" ? generateCSS() : generateTailwind();
+    let code;
+    if (outputType === "css") {
+      code = generateCSS();
+    } else if (outputType === "tailwind") {
+      code = generateTailwind();
+    } else {
+      code = generateTextGradient();
+    }
+    
     navigator.clipboard.writeText(code);
     toast({
       title: "Copiado!",
@@ -196,6 +219,22 @@ export default function GradientsPage() {
       .join(", ")})`,
   };
 
+  // Calculate if text should be white or black based on gradient darkness
+  const getTextColor = (colors: GradientColor[]) => {
+    // Simple approach: Check if the average color is dark
+    const isColorDark = (hex: string) => {
+      const r = parseInt(hex.substring(1, 3), 16);
+      const g = parseInt(hex.substring(3, 5), 16);
+      const b = parseInt(hex.substring(5, 7), 16);
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      return brightness < 128;
+    };
+    
+    // Count how many colors are dark
+    const darkCount = colors.filter(c => isColorDark(c.color)).length;
+    return darkCount > colors.length / 2 ? "text-white" : "text-black";
+  };
+
   return (
     <div className="container my-8">
       <div className="mx-auto max-w-4xl">
@@ -209,25 +248,35 @@ export default function GradientsPage() {
         <div className="mb-8">
           <h2 className="mb-4 text-xl font-semibold">Gradientes Pré-definidos</h2>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {gradientPresets.map((preset, index) => (
-              <Card 
-                key={index} 
-                className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
-                onClick={() => applyPreset(preset)}
-              >
-                <div 
-                  className="h-24 w-full" 
-                  style={{
-                    background: `linear-gradient(${preset.angle}deg, ${preset.colors
-                      .map((color) => `${color.color} ${color.position}%`)
-                      .join(", ")})`,
-                  }}
-                ></div>
-                <CardContent className="p-3">
-                  <p className="text-sm font-medium text-center">{preset.name}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {gradientPresets.map((preset, index) => {
+              const gradientCSS = {
+                background: `linear-gradient(${preset.angle}deg, ${preset.colors
+                  .map((color) => `${color.color} ${color.position}%`)
+                  .join(", ")})`,
+              };
+              const textColorClass = getTextColor(preset.colors);
+              
+              return (
+                <Card 
+                  key={index} 
+                  className="gradient-card overflow-hidden cursor-pointer transition-transform hover:scale-105"
+                  onClick={() => applyPreset(preset)}
+                >
+                  <div 
+                    className="gradient-preview h-24 w-full relative" 
+                    style={gradientCSS}
+                  >
+                    <div className={`gradient-name ${textColorClass}`} style={{ 
+                        backgroundImage: `linear-gradient(${preset.angle}deg, ${preset.colors
+                          .map((color) => `${color.color} ${color.position}%`)
+                          .join(", ")})`
+                      }}>
+                      {preset.name}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         </div>
 
@@ -318,12 +367,21 @@ export default function GradientsPage() {
 
           <div className="md:col-span-2">
             <Card className="h-full">
-              <div className="h-40 w-full" style={gradientStyle}></div>
+              <div className="h-40 w-full relative" style={gradientStyle}>
+                <div className={`gradient-name ${getTextColor(colors)}`} style={{ 
+                  backgroundImage: `linear-gradient(${angle}deg, ${colors
+                    .map((color) => `${color.color} ${color.position}%`)
+                    .join(", ")})` 
+                }}>
+                  Gradient
+                </div>
+              </div>
               <CardContent className="pt-6">
-                <Tabs defaultValue="css" onValueChange={(value) => setOutputType(value as "css" | "tailwind")}>
-                  <TabsList className="grid w-full grid-cols-2">
+                <Tabs defaultValue="css" onValueChange={(value) => setOutputType(value as "css" | "tailwind" | "text-gradient")}>
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="css">CSS</TabsTrigger>
                     <TabsTrigger value="tailwind">Tailwind</TabsTrigger>
+                    <TabsTrigger value="text-gradient">Text</TabsTrigger>
                   </TabsList>
                   <TabsContent value="css" className="mt-4">
                     <pre className="rounded-md bg-muted p-4 text-sm">
@@ -333,6 +391,11 @@ export default function GradientsPage() {
                   <TabsContent value="tailwind" className="mt-4">
                     <pre className="rounded-md bg-muted p-4 text-sm">
                       {generateTailwind()}
+                    </pre>
+                  </TabsContent>
+                  <TabsContent value="text-gradient" className="mt-4">
+                    <pre className="rounded-md bg-muted p-4 text-sm whitespace-pre-wrap">
+                      {generateTextGradient()}
                     </pre>
                   </TabsContent>
                 </Tabs>
