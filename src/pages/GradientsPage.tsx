@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -266,7 +265,7 @@ ${generateTailwind()} bg-clip-text text-transparent
                     className="gradient-preview h-24 w-full relative" 
                     style={gradientCSS}
                   >
-                    <div className={`gradient-name ${textColorClass}`} style={{ 
+                    <div className={`gradient-name ${textColorClass} text-2xl`} style={{ 
                         backgroundImage: `linear-gradient(${preset.angle}deg, ${preset.colors
                           .map((color) => `${color.color} ${color.position}%`)
                           .join(", ")})`
@@ -368,13 +367,7 @@ ${generateTailwind()} bg-clip-text text-transparent
           <div className="md:col-span-2">
             <Card className="h-full">
               <div className="h-40 w-full relative" style={gradientStyle}>
-                <div className={`gradient-name ${getTextColor(colors)}`} style={{ 
-                  backgroundImage: `linear-gradient(${angle}deg, ${colors
-                    .map((color) => `${color.color} ${color.position}%`)
-                    .join(", ")})` 
-                }}>
-                  Gradient
-                </div>
+                {/* Preview without name */}
               </div>
               <CardContent className="pt-6">
                 <Tabs defaultValue="css" onValueChange={(value) => setOutputType(value as "css" | "tailwind" | "text-gradient")}>
