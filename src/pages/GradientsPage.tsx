@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Copy, Download, RefreshCw, Wand2 } from "lucide-react";
+import { Copy, Download, RefreshCw, Wand2, Palette, Circle, CircleHalf, CircleDot, Diamond, Triangle, TriangleRight, Hexagon, SquareDot } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface GradientColor {
   color: string;
@@ -21,6 +23,7 @@ interface GradientPreset {
 }
 
 type GradientType = "linear" | "radial" | "conic";
+type ColorHarmony = "shades" | "complementary" | "analogous" | "triadic" | "split-complementary" | "tetradic" | "square" | "rectangular";
 
 export default function GradientsPage() {
   const { toast } = useToast();
@@ -37,7 +40,8 @@ export default function GradientsPage() {
   const [baseColor, setBaseColor] = useState("#9b87f5");
   const [colorGap, setColorGap] = useState(30);
   const [saturation, setSaturation] = useState(80);
-
+  const [colorHarmony, setColorHarmony] = useState<ColorHarmony>("shades");
+  
   const gradientPresets: GradientPreset[] = [
     {
       name: "Roxo ao Teal",
@@ -151,6 +155,15 @@ export default function GradientsPage() {
     
     setColors(newColors);
     setAngle(Math.floor(Math.random() * 360));
+    
+    // Randomly select gradient type
+    const types: GradientType[] = ["linear", "radial", "conic"];
+    setGradientType(types[Math.floor(Math.random() * types.length)]);
+    
+    toast({
+      title: "Gradiente aleatório",
+      description: "Um novo gradiente aleatório foi gerado.",
+    });
   };
 
   const changeGradientType = () => {
@@ -272,63 +285,141 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
     }
   };
 
-  // Function to generate a palette from a base color
-  const generatePaletteFromColor = () => {
-    const hslToHex = (h: number, s: number, l: number) => {
-      h = h % 360;
-      s = s / 100;
-      l = l / 100;
-      const a = s * Math.min(l, 1 - l);
-      const f = (n: number) => {
-        const k = (n + h / 30) % 12;
-        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-        return Math.round(255 * color).toString(16).padStart(2, '0');
-      };
-      return `#${f(0)}${f(4)}${f(8)}`;
-    };
+  // Function to convert hex to HSL
+  const hexToHsl = (hex: string) => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
 
-    // Convert hex to HSL
-    const hexToHsl = (hex: string) => {
-      const r = parseInt(hex.slice(1, 3), 16) / 255;
-      const g = parseInt(hex.slice(3, 5), 16) / 255;
-      const b = parseInt(hex.slice(5, 7), 16) / 255;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
       
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      let h = 0, s = 0, l = (max + min) / 2;
-
-      if (max !== min) {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        
-        switch (max) {
-          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-          case g: h = (b - r) / d + 2; break;
-          case b: h = (r - g) / d + 4; break;
-        }
-        
-        h *= 60;
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
       }
       
-      return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
-    };
-
-    const [h, s, l] = hexToHsl(baseColor);
-    
-    const newColors: GradientColor[] = [];
-    const steps = 5;
-    
-    for (let i = 0; i < steps; i++) {
-      const position = (i * 100) / (steps - 1);
-      const hue = (h + i * colorGap) % 360;
-      newColors.push({
-        color: hslToHex(hue, Math.min(100, s + saturation - 80), l),
-        position,
-      });
+      h *= 60;
     }
     
+    return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+  };
+
+  // Function to convert HSL to Hex
+  const hslToHex = (h: number, s: number, l: number) => {
+    h = h % 360;
+    s = s / 100;
+    l = l / 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(4)}${f(8)}`;
+  };
+
+  // Generate a color palette based on harmony
+  const generatePaletteFromColor = () => {
+    const [h, s, l] = hexToHsl(baseColor);
+    const newColors: GradientColor[] = [];
+
+    switch (colorHarmony) {
+      case "shades":
+        // Generate different shades/tints of the same color
+        for (let i = 0; i < 5; i++) {
+          const position = (i * 100) / 4;
+          const lightness = Math.max(10, Math.min(90, l - 30 + (i * 15)));
+          newColors.push({
+            color: hslToHex(h, Math.min(100, s + saturation - 80), lightness),
+            position,
+          });
+        }
+        break;
+      
+      case "complementary":
+        // Base color and its complement (opposite on color wheel)
+        newColors.push({ color: baseColor, position: 0 });
+        newColors.push({ color: hslToHex((h + 180) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
+        break;
+      
+      case "analogous":
+        // Colors adjacent to each other on the color wheel
+        for (let i = 0; i < 5; i++) {
+          const position = (i * 100) / 4;
+          const hue = (h + (i - 2) * colorGap) % 360;
+          newColors.push({
+            color: hslToHex(hue, Math.min(100, s + saturation - 80), l),
+            position,
+          });
+        }
+        break;
+      
+      case "triadic":
+        // Three colors evenly spaced on the color wheel (120° apart)
+        newColors.push({ color: baseColor, position: 0 });
+        newColors.push({ color: hslToHex((h + 120) % 360, Math.min(100, s + saturation - 80), l), position: 50 });
+        newColors.push({ color: hslToHex((h + 240) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
+        break;
+      
+      case "split-complementary":
+        // Base color and two colors adjacent to its complement
+        newColors.push({ color: baseColor, position: 0 });
+        newColors.push({ color: hslToHex((h + 150) % 360, Math.min(100, s + saturation - 80), l), position: 50 });
+        newColors.push({ color: hslToHex((h + 210) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
+        break;
+      
+      case "tetradic":
+        // Four colors evenly spaced on the color wheel
+        newColors.push({ color: baseColor, position: 0 });
+        newColors.push({ color: hslToHex((h + 90) % 360, Math.min(100, s + saturation - 80), l), position: 33 });
+        newColors.push({ color: hslToHex((h + 180) % 360, Math.min(100, s + saturation - 80), l), position: 67 });
+        newColors.push({ color: hslToHex((h + 270) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
+        break;
+      
+      case "square":
+        // Four colors spaced 90° apart on the color wheel
+        newColors.push({ color: baseColor, position: 0 });
+        newColors.push({ color: hslToHex((h + 90) % 360, Math.min(100, s + saturation - 80), l), position: 33 });
+        newColors.push({ color: hslToHex((h + 180) % 360, Math.min(100, s + saturation - 80), l), position: 67 });
+        newColors.push({ color: hslToHex((h + 270) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
+        break;
+      
+      case "rectangular":
+        // Two complementary pairs
+        newColors.push({ color: baseColor, position: 0 });
+        newColors.push({ color: hslToHex((h + 60) % 360, Math.min(100, s + saturation - 80), l), position: 33 });
+        newColors.push({ color: hslToHex((h + 180) % 360, Math.min(100, s + saturation - 80), l), position: 67 });
+        newColors.push({ color: hslToHex((h + 240) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
+        break;
+      
+      default:
+        // Default to shades
+        for (let i = 0; i < 5; i++) {
+          const position = (i * 100) / 4;
+          const lightness = Math.max(10, Math.min(90, l - 30 + (i * 15)));
+          newColors.push({
+            color: hslToHex(h, Math.min(100, s + saturation - 80), lightness),
+            position,
+          });
+        }
+    }
+    
+    // Sort by position and set colors
+    newColors.sort((a, b) => a.position - b.position);
     setColors(newColors);
     setEditorMode("advanced");
+    
+    toast({
+      title: "Paleta gerada",
+      description: `Paleta de cores baseada em ${colorHarmony} gerada com sucesso.`,
+    });
   };
 
   const gradientStyle = {
@@ -359,6 +450,30 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
     // Count how many colors are dark
     const darkCount = colors.filter(c => isColorDark(c.color)).length;
     return darkCount > colors.length / 2 ? "text-white" : "text-black";
+  };
+
+  // Icon mapping for color harmony types
+  const getHarmonyIcon = (harmony: ColorHarmony) => {
+    switch (harmony) {
+      case "shades":
+        return <CircleHalf className="h-4 w-4" />;
+      case "complementary":
+        return <Circle className="h-4 w-4" />;
+      case "analogous":
+        return <CircleDot className="h-4 w-4" />;
+      case "triadic":
+        return <Triangle className="h-4 w-4" />;
+      case "split-complementary":
+        return <TriangleRight className="h-4 w-4" />;
+      case "tetradic":
+        return <Diamond className="h-4 w-4" />;
+      case "square":
+        return <SquareDot className="h-4 w-4" />;
+      case "rectangular":
+        return <Hexagon className="h-4 w-4" />;
+      default:
+        return <Palette className="h-4 w-4" />;
+    }
   };
 
   return (
@@ -405,6 +520,64 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
                     </div>
                     
                     <div>
+                      <h3 className="mb-2 font-medium">Tipo de Harmonia de Cores</h3>
+                      <RadioGroup 
+                        className="grid grid-cols-2 gap-2"
+                        value={colorHarmony}
+                        onValueChange={(value) => setColorHarmony(value as ColorHarmony)}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="shades" id="shades" />
+                          <Label htmlFor="shades" className="flex items-center gap-1">
+                            <CircleHalf className="h-4 w-4" /> Tons
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="complementary" id="complementary" />
+                          <Label htmlFor="complementary" className="flex items-center gap-1">
+                            <Circle className="h-4 w-4" /> Complementar
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="analogous" id="analogous" />
+                          <Label htmlFor="analogous" className="flex items-center gap-1">
+                            <CircleDot className="h-4 w-4" /> Análogas
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="triadic" id="triadic" />
+                          <Label htmlFor="triadic" className="flex items-center gap-1">
+                            <Triangle className="h-4 w-4" /> Tríades
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="split-complementary" id="split-complementary" />
+                          <Label htmlFor="split-complementary" className="flex items-center gap-1">
+                            <TriangleRight className="h-4 w-4" /> Split Complementar
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="tetradic" id="tetradic" />
+                          <Label htmlFor="tetradic" className="flex items-center gap-1">
+                            <Diamond className="h-4 w-4" /> Tetrádica
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="square" id="square" />
+                          <Label htmlFor="square" className="flex items-center gap-1">
+                            <SquareDot className="h-4 w-4" /> Quadrado
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rectangular" id="rectangular" />
+                          <Label htmlFor="rectangular" className="flex items-center gap-1">
+                            <Hexagon className="h-4 w-4" /> Retangular
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div>
                       <h3 className="mb-2 font-medium">Distância entre Cores: {colorGap}°</h3>
                       <Slider
                         value={[colorGap]}
@@ -430,6 +603,7 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
                       className="w-full"
                       onClick={generatePaletteFromColor}
                     >
+                      <Palette className="mr-2 h-4 w-4" />
                       Gerar Paleta
                     </Button>
                   </TabsContent>
@@ -497,25 +671,30 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
                         onValueChange={(value) => setAngle(value[0])}
                       />
                     </div>
-
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={generateRandomGradient}
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Gerar Aleatório
-                    </Button>
                   </TabsContent>
                 </Tabs>
               </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button 
+                  variant="outline" 
+                  onClick={generateRandomGradient}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Gerar Aleatório
+                </Button>
+                <Button 
+                  onClick={generatePaletteFromColor}
+                >
+                  <Palette className="mr-2 h-4 w-4" />
+                  {editorMode === "simple" ? "Gerar Paleta" : "Aplicar Harmonia"}
+                </Button>
+              </CardFooter>
             </Card>
           </div>
 
           <div className="md:col-span-2">
             <Card className="h-full">
               <div className="h-40 w-full relative" style={gradientStyle}>
-                {/* Preview without name */}
                 <div className="absolute top-2 right-2 flex gap-2">
                   <Button
                     variant="secondary"
@@ -525,6 +704,15 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
                     title="Alterar tipo de gradiente"
                   >
                     <Wand2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="rounded-full bg-white/70 backdrop-blur-sm hover:bg-white"
+                    onClick={generateRandomGradient}
+                    title="Gerar gradiente aleatório"
+                  >
+                    <RefreshCw className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -593,20 +781,28 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
               return (
                 <Card 
                   key={index} 
-                  className="gradient-card overflow-hidden cursor-pointer transition-transform hover:scale-105"
+                  className="gradient-card overflow-hidden cursor-pointer transition-transform hover:scale-105 group"
                   onClick={() => applyPreset(preset)}
                 >
                   <div 
-                    className="gradient-preview h-24 w-full relative" 
+                    className="gradient-preview h-24 w-full relative flex items-center justify-center" 
                     style={gradientCSS}
                   >
-                    <div className={`gradient-name ${textColorClass} text-2xl`} style={{ 
+                    <div 
+                      className={`text-center font-handwritten text-2xl ${textColorClass} text-shadow-sm transition-all duration-300 group-hover:bg-clip-text group-hover:text-transparent`}
+                      style={{ 
                         backgroundImage: `linear-gradient(${preset.angle}deg, ${preset.colors
                           .map((color) => `${color.color} ${color.position}%`)
-                          .join(", ")})`
-                      }}>
+                          .join(", ")})`,
+                        textShadow: "0px 1px 2px rgba(0,0,0,0.2)"
+                      }}
+                    >
                       {preset.name}
                     </div>
+                    <div 
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ background: "linear-gradient(120deg, #ffffff 0%, #f5f5f5 100%)" }}
+                    ></div>
                   </div>
                 </Card>
               );
