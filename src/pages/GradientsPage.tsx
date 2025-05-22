@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Copy, Download, RefreshCw, Wand2, Palette, Circle, CircleHalf, CircleDot, Diamond, Triangle, TriangleRight, Hexagon, SquareDot } from "lucide-react";
+import { Copy, Download, RefreshCw, Wand2, Palette, Circle, CircleHelp, CircleDot, Diamond, Triangle, TriangleRight, Hexagon, SquareDot } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -456,7 +455,7 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
   const getHarmonyIcon = (harmony: ColorHarmony) => {
     switch (harmony) {
       case "shades":
-        return <CircleHalf className="h-4 w-4" />;
+        return <CircleHelp className="h-4 w-4" />;
       case "complementary":
         return <Circle className="h-4 w-4" />;
       case "analogous":
@@ -529,7 +528,7 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="shades" id="shades" />
                           <Label htmlFor="shades" className="flex items-center gap-1">
-                            <CircleHalf className="h-4 w-4" /> Tons
+                            <CircleHelp className="h-4 w-4" /> Tons
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
