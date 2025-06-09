@@ -1,6 +1,7 @@
 
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -8,10 +9,10 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <AuroraBackground className="min-h-screen flex flex-col h-auto" showRadialGradient={false}>
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 relative z-10">{children}</main>
       <Footer />
-    </div>
+    </AuroraBackground>
   );
 }

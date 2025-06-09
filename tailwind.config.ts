@@ -1,4 +1,9 @@
+
 import type { Config } from "tailwindcss";
+
+const {
+  default: flattenColorPalette,
+} = require("tailwindcss/lib/util/flattenColorPalette");
 
 export default {
 	darkMode: ["class"],
@@ -71,6 +76,18 @@ export default {
 					pink: '#E779C1',
 					dark: '#1A1F2C',
 					light: '#F1F0FB'
+				},
+				crimson: {
+					50: '#fef2f2',
+					100: '#fee2e2',
+					200: '#fecaca',
+					300: '#fca5a5',
+					400: '#f87171',
+					500: '#ef4444',
+					600: '#dc2626',
+					700: '#b91c1c',
+					800: '#991b1b',
+					900: '#7f1d1d',
 				}
 			},
 			borderRadius: {
@@ -102,13 +119,22 @@ export default {
 				'pulse-light': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.7' }
-				}
+				},
+				aurora: {
+					from: {
+						backgroundPosition: "50% 50%, 50% 50%",
+					},
+					to: {
+						backgroundPosition: "350% 50%, 350% 50%",
+					},
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'float': 'float 6s ease-in-out infinite',
-				'pulse-light': 'pulse-light 4s ease-in-out infinite'
+				'pulse-light': 'pulse-light 4s ease-in-out infinite',
+				aurora: "aurora 60s linear infinite",
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -116,5 +142,17 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [require("tailwindcss-animate"), addVariablesForColors],
 } satisfies Config;
+
+// This plugin adds each Tailwind color as a global CSS variable, e.g. var(--gray-200).
+function addVariablesForColors({ addBase, theme }: any) {
+  let allColors = flattenColorPalette(theme("colors"));
+  let newVars = Object.fromEntries(
+    Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
+  );
+
+  addBase({
+    ":root": newVars,
+  });
+}
