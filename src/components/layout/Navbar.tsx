@@ -29,10 +29,10 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="border-b bg-card/80 backdrop-blur-sm relative z-20">
+    <nav className="border-b">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-primary" />
+          <Sparkles className="h-6 w-6 text-designer-purple" />
           <Link to="/" className="text-xl font-bold">
             BackgroundAI
           </Link>
