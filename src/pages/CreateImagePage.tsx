@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBackgroundStyles } from "@/hooks/useBackgroundStyles";
@@ -12,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/sonner";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import LoginModal from "@/components/auth/LoginModal";
 
 export default function CreateImagePage() {
   const { user } = useAuth();
@@ -27,6 +27,7 @@ export default function CreateImagePage() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [generatedImageName, setGeneratedImageName] = useState<string>("");
   const [improvedPrompt, setImprovedPrompt] = useState<string>("");
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     if (styleId) {
@@ -63,6 +64,12 @@ export default function CreateImagePage() {
   const selectedStyle = styles?.find(style => style.id === selectedStyleId);
 
   const generateImage = async () => {
+    // Verificar se é prompt personalizado e se o usuário está logado
+    if (customPrompt && !selectedStyleId && !user) {
+      setShowLoginModal(true);
+      return;
+    }
+
     if (!selectedStyleId && !customPrompt) {
       toast.error("Selecione um estilo ou forneça um prompt personalizado");
       return;
@@ -226,6 +233,11 @@ export default function CreateImagePage() {
                 }}
                 className="min-h-[120px]"
               />
+              {customPrompt && !user && (
+                <p className="text-sm text-amber-600 mt-2">
+                  ⚠️ Você precisa estar logado para criar backgrounds com prompt personalizado
+                </p>
+              )}
             </div>
 
             <Button 
@@ -280,6 +292,11 @@ export default function CreateImagePage() {
           </Card>
         </div>
       </div>
+
+      <LoginModal 
+        open={showLoginModal} 
+        onOpenChange={setShowLoginModal} 
+      />
     </div>
   );
 }
