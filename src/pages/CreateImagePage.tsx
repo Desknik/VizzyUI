@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBackgroundStyles } from "@/hooks/useBackgroundStyles";
@@ -25,6 +24,8 @@ export default function CreateImagePage() {
   const [customPrompt, setCustomPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [generatedImageName, setGeneratedImageName] = useState<string>("");
+  const [improvedPrompt, setImprovedPrompt] = useState<string>("");
 
   useEffect(() => {
     if (styleId) {
@@ -68,16 +69,60 @@ export default function CreateImagePage() {
 
     setIsGenerating(true);
     try {
-      // Normalmente aqui haveria uma chamada para uma edge function para gerar a imagem
-      // Como exemplo, simularemos apenas uma resposta após um delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const webhookUrl = "http://n8n-vwgkogkckw884cc4co48ksoo.34.0.129.70.sslip.io/webhook-test/c8390b0e-4bfa-43ff-8f4b-95724870f72c";
       
-      // Simulando uma URL de imagem gerada (em produção, isso seria a resposta da IA)
-      const demoImageUrl = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=800&q=80";
-      setGeneratedImage(demoImageUrl);
+      let finalPrompt = "";
       
-      toast.success("Imagem gerada com sucesso!");
+      if (selectedStyleId && selectedStyle) {
+        // Se tem estilo selecionado
+        if (customPrompt) {
+          // Prompt personalizado + estilo
+          finalPrompt = `user: ${customPrompt}, style: ${selectedStyle.prompt}`;
+        } else {
+          // Apenas estilo
+          finalPrompt = selectedStyle.prompt;
+        }
+      } else {
+        // Apenas prompt personalizado
+        finalPrompt = customPrompt;
+      }
+
+      const requestBody = {
+        user: user?.id || null,
+        styleName: selectedStyle?.name || null,
+        styleId: selectedStyleId || null,
+        stylePrompt: selectedStyle?.prompt || null,
+        prompt: finalPrompt
+      };
+
+      console.log("Enviando requisição para webhook:", requestBody);
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Resposta do webhook:", data);
+
+      // Esperamos que a API retorne: { imageUrl, name, improvedPrompt }
+      if (data.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        setGeneratedImageName(data.name || "Background gerado");
+        setImprovedPrompt(data.improvedPrompt || finalPrompt);
+        toast.success("Imagem gerada com sucesso!");
+      } else {
+        throw new Error("API não retornou URL da imagem");
+      }
     } catch (error: any) {
+      console.error("Erro ao gerar imagem:", error);
       toast.error("Erro ao gerar imagem", { description: error.message });
     } finally {
       setIsGenerating(false);
@@ -88,13 +133,12 @@ export default function CreateImagePage() {
     if (!generatedImage) return;
     
     try {
-      const finalPrompt = customPrompt || (selectedStyle?.prompt || "");
-      
       const { data, error } = await supabase
         .from("background_images")
         .insert({
           image_url: generatedImage,
-          prompt: finalPrompt,
+          prompt: improvedPrompt || customPrompt || (selectedStyle?.prompt || ""),
+          name: generatedImageName,
           style_id: selectedStyleId || null,
           user_id: user?.id || null,
           is_public: true
@@ -206,9 +250,17 @@ export default function CreateImagePage() {
               <div className="p-4 w-full">
                 <img 
                   src={generatedImage} 
-                  alt="Background gerado" 
+                  alt={generatedImageName || "Background gerado"} 
                   className="w-full rounded-md mb-4" 
                 />
+                {generatedImageName && (
+                  <p className="text-sm font-medium mb-2">{generatedImageName}</p>
+                )}
+                {improvedPrompt && improvedPrompt !== (customPrompt || selectedStyle?.prompt) && (
+                  <p className="text-xs text-muted-foreground mb-4">
+                    <strong>Prompt melhorado:</strong> {improvedPrompt}
+                  </p>
+                )}
                 <Button onClick={saveImage} className="w-full">
                   Salvar imagem
                 </Button>
