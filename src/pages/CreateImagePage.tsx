@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBackgroundStyles } from "@/hooks/useBackgroundStyles";
@@ -69,7 +70,7 @@ export default function CreateImagePage() {
 
     setIsGenerating(true);
     try {
-      const webhookUrl = "http://n8n-vwgkogkckw884cc4co48ksoo.34.0.129.70.sslip.io/webhook-test/c8390b0e-4bfa-43ff-8f4b-95724870f72c";
+      const webhookUrl = "https://vizzyui-n8n.fragments.com.br/webhook-test/c8390b0e-4bfa-43ff-8f4b-95724870f72c";
       
       let finalPrompt = "";
       
