@@ -1,12 +1,10 @@
 
 import { useParams, Link } from "react-router-dom";
 import { useBackgroundStyle } from "@/hooks/useBackgroundStyles";
-import { useBackgroundImages } from "@/hooks/useBackgroundImages";
 import { useCommunityBackgrounds } from "@/hooks/useCommunityBackgrounds";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import CommunityImageCard from "@/components/community/CommunityImageCard";
@@ -14,7 +12,6 @@ import CommunityImageCard from "@/components/community/CommunityImageCard";
 export default function StyleDetailPage() {
   const { styleId } = useParams<{ styleId: string }>();
   const { data: style, isLoading: isLoadingStyle } = useBackgroundStyle(styleId!);
-  const { data: images, isLoading: isLoadingImages } = useBackgroundImages(styleId);
   const { data: communityImages, isLoading: isLoadingCommunity } = useCommunityBackgrounds(styleId);
 
   if (isLoadingStyle) {
@@ -87,84 +84,34 @@ export default function StyleDetailPage() {
         )}
       </div>
 
-      <Tabs defaultValue="gallery" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="gallery">Galeria</TabsTrigger>
-          <TabsTrigger value="community">Comunidade</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="gallery" className="mt-6">
-          {isLoadingImages ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="w-full aspect-[16/9]" />
-              ))}
-            </div>
-          ) : images && images.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {images.map((image) => (
-                <Card key={image.id} className="overflow-hidden">
-                  <AspectRatio ratio={16 / 9}>
-                    <img
-                      src={image.image_url}
-                      alt="Background gerado"
-                      className="object-cover w-full h-full"
-                    />
-                  </AspectRatio>
-                  <CardContent className="p-4">
-                    <Button asChild variant="outline" size="sm" className="w-full">
-                      <Link to={`/create-image?reference=${image.id}`}>
-                        <Sparkles className="mr-2 h-3 w-3" />
-                        Usar como referência
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">
-                Ainda não há backgrounds gerados para este estilo.
-              </p>
-              <Button asChild>
-                <Link to={`/create-image?style=${styleId}`}>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Seja o primeiro a gerar
-                </Link>
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="community" className="mt-6">
-          {isLoadingCommunity ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="w-full aspect-[16/9]" />
-              ))}
-            </div>
-          ) : communityImages && communityImages.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {communityImages.map((image) => (
-                <CommunityImageCard key={image.id} image={image} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">
-                Ainda não há backgrounds da comunidade para este estilo.
-              </p>
-              <Button asChild>
-                <Link to={`/create-image?style=${styleId}`}>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Seja o primeiro a contribuir
-                </Link>
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold mb-6">Backgrounds do Estilo</h2>
+        {isLoadingCommunity ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="w-full aspect-[16/9]" />
+            ))}
+          </div>
+        ) : communityImages && communityImages.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {communityImages.map((image) => (
+              <CommunityImageCard key={image.id} image={image} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">
+              Ainda não há backgrounds gerados para este estilo.
+            </p>
+            <Button asChild>
+              <Link to={`/create-image?style=${styleId}`}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Seja o primeiro a gerar
+              </Link>
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

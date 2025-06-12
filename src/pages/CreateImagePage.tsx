@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft, Download, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import LoginModal from "@/components/auth/LoginModal";
 
@@ -28,7 +28,7 @@ export default function CreateImagePage() {
   const [generatedImageName, setGeneratedImageName] = useState<string>("");
   const [improvedPrompt, setImprovedPrompt] = useState<string>("");
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [referenceImage, setReferenceImage] = useState<{url: string, name: string} | null>(null);
+  const [referenceImage, setReferenceImage] = useState<{url: string, name: string, user_email?: string, user_id?: string} | null>(null);
 
   useEffect(() => {
     if (styleId) {
@@ -54,7 +54,9 @@ export default function CreateImagePage() {
             setCustomPrompt(data.prompt);
             setReferenceImage({
               url: data.image_url,
-              name: data.name || "Imagem de referência"
+              name: data.name || "Imagem de referência",
+              user_email: data.user_email,
+              user_id: data.user_id
             });
           }
         } catch (error) {
@@ -67,6 +69,34 @@ export default function CreateImagePage() {
   }, [referenceId]);
 
   const selectedStyle = styles?.find(style => style.id === selectedStyleId);
+
+  const getUserDisplayName = (userEmail?: string, userId?: string) => {
+    if (userEmail) {
+      return userEmail.split('@')[0];
+    }
+    return `Usuário ${userId?.slice(0, 8) || 'Anônimo'}`;
+  };
+
+  const handleDownload = async (imageUrl: string, imageName: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `background-${imageName || 'generated'}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Download iniciado!");
+    } catch (error) {
+      toast.error("Erro ao fazer download da imagem");
+      console.error(error);
+    }
+  };
 
   const generateImage = async () => {
     // Verificar se é prompt personalizado e se o usuário está logado
@@ -275,14 +305,30 @@ export default function CreateImagePage() {
                 {generatedImageName && (
                   <p className="text-sm font-medium mb-2">{generatedImageName}</p>
                 )}
+                {user && (
+                  <div className="flex items-center text-xs text-muted-foreground mb-2">
+                    <User className="h-3 w-3 mr-1" />
+                    <span>Criado por: {user.email?.split('@')[0] || 'Você'}</span>
+                  </div>
+                )}
                 {improvedPrompt && improvedPrompt !== (customPrompt || selectedStyle?.prompt) && (
                   <p className="text-xs text-muted-foreground mb-4">
                     <strong>Prompt melhorado:</strong> {improvedPrompt}
                   </p>
                 )}
-                <Button onClick={saveImage} className="w-full">
-                  Salvar imagem
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => handleDownload(generatedImage, generatedImageName)} 
+                    variant="outline" 
+                    className="flex-1"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Baixar
+                  </Button>
+                  <Button onClick={saveImage} className="flex-1">
+                    Salvar imagem
+                  </Button>
+                </div>
               </div>
             ) : referenceImage ? (
               <div className="p-4 w-full">
@@ -294,6 +340,12 @@ export default function CreateImagePage() {
                 <p className="text-sm font-medium mb-2 text-center text-muted-foreground">
                   📸 {referenceImage.name}
                 </p>
+                {(referenceImage.user_email || referenceImage.user_id) && (
+                  <div className="flex items-center justify-center text-xs text-muted-foreground mb-2">
+                    <User className="h-3 w-3 mr-1" />
+                    <span>Criado por: {getUserDisplayName(referenceImage.user_email, referenceImage.user_id)}</span>
+                  </div>
+                )}
                 <p className="text-xs text-center text-muted-foreground">
                   Esta imagem será usada como referência para gerar uma nova
                 </p>
