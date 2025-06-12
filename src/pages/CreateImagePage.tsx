@@ -28,6 +28,7 @@ export default function CreateImagePage() {
   const [generatedImageName, setGeneratedImageName] = useState<string>("");
   const [improvedPrompt, setImprovedPrompt] = useState<string>("");
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [referenceImage, setReferenceImage] = useState<{url: string, name: string} | null>(null);
 
   useEffect(() => {
     if (styleId) {
@@ -51,6 +52,10 @@ export default function CreateImagePage() {
               setSelectedStyleId(data.style_id);
             }
             setCustomPrompt(data.prompt);
+            setReferenceImage({
+              url: data.image_url,
+              name: data.name || "Imagem de referência"
+            });
           }
         } catch (error) {
           console.error("Error fetching reference image:", error);
@@ -125,6 +130,7 @@ export default function CreateImagePage() {
         setGeneratedImage(data.imageUrl);
         setGeneratedImageName(data.name || "Background gerado");
         setImprovedPrompt(data.improvedPrompt || finalPrompt);
+        setReferenceImage(null); // Limpar referência quando nova imagem é gerada
         toast.success("Imagem gerada com sucesso!");
       } else {
         throw new Error("API não retornou URL da imagem");
@@ -277,6 +283,20 @@ export default function CreateImagePage() {
                 <Button onClick={saveImage} className="w-full">
                   Salvar imagem
                 </Button>
+              </div>
+            ) : referenceImage ? (
+              <div className="p-4 w-full">
+                <img 
+                  src={referenceImage.url} 
+                  alt={referenceImage.name} 
+                  className="w-full rounded-md mb-4" 
+                />
+                <p className="text-sm font-medium mb-2 text-center text-muted-foreground">
+                  📸 {referenceImage.name}
+                </p>
+                <p className="text-xs text-center text-muted-foreground">
+                  Esta imagem será usada como referência para gerar uma nova
+                </p>
               </div>
             ) : (
               <div className="text-center p-8">

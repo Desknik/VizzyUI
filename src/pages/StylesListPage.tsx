@@ -1,13 +1,16 @@
 
 import { useBackgroundStyles } from "@/hooks/useBackgroundStyles";
-import StyleCard from "@/components/styles/StyleCard";
+import { useCommunityBackgrounds } from "@/hooks/useCommunityBackgrounds";
+import StyleCarousel from "@/components/styles/StyleCarousel";
+import CommunityImageCard from "@/components/community/CommunityImageCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function StylesListPage() {
-  const { data: styles, isLoading, error } = useBackgroundStyles();
+  const { data: styles, isLoading: stylesLoading, error: stylesError } = useBackgroundStyles();
+  const { data: communityImages, isLoading: imagesLoading, error: imagesError } = useCommunityBackgrounds();
 
   return (
     <div className="container py-8">
@@ -15,7 +18,7 @@ export default function StylesListPage() {
         <div>
           <h1 className="text-3xl font-bold mb-2">Estilos de Background</h1>
           <p className="text-muted-foreground">
-            Escolha um estilo para ver backgrounds gerados ou criar o seu próprio.
+            Escolha um estilo ou explore backgrounds criados pela comunidade.
           </p>
         </div>
         <Button asChild className="mt-4 md:mt-0">
@@ -26,29 +29,45 @@ export default function StylesListPage() {
         </Button>
       </div>
 
-      {error && (
-        <div className="p-4 text-center text-red-500">
-          Erro ao carregar estilos. Por favor, tente novamente.
-        </div>
-      )}
+      {/* Carrossel de Estilos */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-semibold mb-6">Estilos Disponíveis</h2>
+        {stylesError ? (
+          <div className="p-4 text-center text-red-500">
+            Erro ao carregar estilos. Por favor, tente novamente.
+          </div>
+        ) : (
+          <StyleCarousel />
+        )}
+      </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i}>
-              <Skeleton className="w-full aspect-[16/9]" />
-              <Skeleton className="h-8 w-3/4 mt-2" />
-              <Skeleton className="h-4 w-full mt-2" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {styles?.map((style) => (
-            <StyleCard key={style.id} style={style} />
-          ))}
-        </div>
-      )}
+      {/* Grid de Backgrounds da Comunidade */}
+      <div>
+        <h2 className="text-2xl font-semibold mb-6">Backgrounds da Comunidade</h2>
+        {imagesError ? (
+          <div className="p-4 text-center text-red-500">
+            Erro ao carregar backgrounds da comunidade. Por favor, tente novamente.
+          </div>
+        ) : imagesLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="w-full aspect-[16/9]" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {communityImages?.map((image) => (
+              <CommunityImageCard key={image.id} image={image} />
+            ))}
+          </div>
+        )}
+        
+        {!imagesLoading && communityImages?.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Nenhum background da comunidade encontrado ainda.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
