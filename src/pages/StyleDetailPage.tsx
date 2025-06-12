@@ -3,11 +3,10 @@ import { useParams, Link } from "react-router-dom";
 import { useBackgroundStyle } from "@/hooks/useBackgroundStyles";
 import { useCommunityBackgrounds } from "@/hooks/useCommunityBackgrounds";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import CommunityImageCard from "@/components/community/CommunityImageCard";
+import StyleCard from "@/components/styles/StyleCard";
 
 export default function StyleDetailPage() {
   const { styleId } = useParams<{ styleId: string }>();
@@ -57,11 +56,20 @@ export default function StyleDetailPage() {
 
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{style.name}</h1>
-            {style.description && (
-              <p className="text-muted-foreground">{style.description}</p>
-            )}
+          <div className="flex items-center gap-4 mb-4 md:mb-0">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border">
+              <img
+                src={style.preview_image || "placeholder.svg"}
+                alt={style.name}
+                className="object-cover w-full h-full"
+              />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{style.name}</h1>
+              {style.description && (
+                <p className="text-muted-foreground">{style.description}</p>
+              )}
+            </div>
           </div>
           <Button asChild className="mt-4 md:mt-0">
             <Link to={`/create-image?style=${styleId}`}>
@@ -70,18 +78,6 @@ export default function StyleDetailPage() {
             </Link>
           </Button>
         </div>
-
-        {style.preview_image && (
-          <Card className="overflow-hidden mb-8">
-            <AspectRatio ratio={16 / 9} className="max-w-md mx-auto">
-              <img
-                src={style.preview_image}
-                alt={style.name}
-                className="object-cover w-full h-full"
-              />
-            </AspectRatio>
-          </Card>
-        )}
       </div>
 
       <div className="mb-6">

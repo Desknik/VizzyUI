@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBackgroundStyles } from "@/hooks/useBackgroundStyles";
+import { useCommunityBackgrounds } from "@/hooks/useCommunityBackgrounds";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { toast } from "@/components/ui/sonner";
 import { Sparkles, ArrowLeft, Download, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import LoginModal from "@/components/auth/LoginModal";
+import CommunityImageCard from "@/components/community/CommunityImageCard";
 
 export default function CreateImagePage() {
   const { user } = useAuth();
@@ -28,7 +30,12 @@ export default function CreateImagePage() {
   const [generatedImageName, setGeneratedImageName] = useState<string>("");
   const [improvedPrompt, setImprovedPrompt] = useState<string>("");
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [referenceImage, setReferenceImage] = useState<{url: string, name: string, user_id?: string} | null>(null);
+  const [referenceImage, setReferenceImage] = useState<{url: string, name: string, user_id?: string, style_id?: string} | null>(null);
+
+  // Fetch related images based on reference
+  const { data: relatedImages } = useCommunityBackgrounds(
+    referenceImage?.style_id || undefined
+  );
 
   useEffect(() => {
     if (styleId) {
@@ -55,7 +62,8 @@ export default function CreateImagePage() {
             setReferenceImage({
               url: data.image_url,
               name: data.name || "Imagem de referência",
-              user_id: data.user_id
+              user_id: data.user_id,
+              style_id: data.style_id
             });
           }
         } catch (error) {
@@ -200,6 +208,9 @@ export default function CreateImagePage() {
       toast.error("Erro ao salvar imagem", { description: error.message });
     }
   };
+
+  // Filter related images to exclude the reference image
+  const filteredRelatedImages = relatedImages?.filter(img => img.id !== referenceId) || [];
 
   return (
     <div className="container py-8">
@@ -369,6 +380,20 @@ export default function CreateImagePage() {
           </Card>
         </div>
       </div>
+
+      {/* Related Images Section */}
+      {referenceImage && filteredRelatedImages.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-semibold mb-6">
+            {referenceImage.style_id ? 'Outras imagens do mesmo estilo' : 'Outras imagens do mesmo usuário'}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredRelatedImages.slice(0, 8).map((image) => (
+              <CommunityImageCard key={image.id} image={image} />
+            ))}
+          </div>
+        </div>
+      )}
 
       <LoginModal 
         open={showLoginModal} 

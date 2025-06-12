@@ -1,8 +1,6 @@
 
 import { useBackgroundStyles, type BackgroundStyle } from "@/hooks/useBackgroundStyles";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import StyleCard from "./StyleCard";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function StyleCarousel() {
@@ -21,42 +19,27 @@ export default function StyleCarousel() {
   }
 
   return (
-    <Carousel
-      className="w-full max-w-5xl mx-auto"
-      opts={{
-        align: "start",
-        loop: true,
-      }}
-    >
-      <CarouselContent>
+    <div className="w-full">
+      <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
         {styles?.map((style) => (
-          <CarouselItem key={style.id} className="md:basis-1/2 lg:basis-1/3">
-            <div className="p-1">
-              <StyleCard style={style} />
-            </div>
-          </CarouselItem>
+          <div key={style.id} className="flex-shrink-0">
+            <StyleCard style={style} variant="compact" />
+          </div>
         ))}
-      </CarouselContent>
-      <div className="flex justify-center mt-4">
-        <CarouselPrevious className="static translate-y-0 mx-2" />
-        <CarouselNext className="static translate-y-0 mx-2" />
       </div>
-    </Carousel>
+    </div>
   );
 }
 
 function StyleCarouselSkeleton() {
   return (
-    <div className="w-full max-w-5xl mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <Skeleton className="h-48 w-full" />
-            <div className="p-4">
-              <Skeleton className="h-6 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          </Card>
+    <div className="w-full">
+      <div className="flex gap-6 overflow-x-auto pb-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="flex-shrink-0 flex flex-col items-center space-y-2 p-2">
+            <Skeleton className="w-16 h-16 rounded-full" />
+            <Skeleton className="h-4 w-16" />
+          </div>
         ))}
       </div>
     </div>
