@@ -28,7 +28,7 @@ export default function CreateImagePage() {
   const [generatedImageName, setGeneratedImageName] = useState<string>("");
   const [improvedPrompt, setImprovedPrompt] = useState<string>("");
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [referenceImage, setReferenceImage] = useState<{url: string, name: string, user_email?: string, user_id?: string} | null>(null);
+  const [referenceImage, setReferenceImage] = useState<{url: string, name: string, user_id?: string} | null>(null);
 
   useEffect(() => {
     if (styleId) {
@@ -55,7 +55,6 @@ export default function CreateImagePage() {
             setReferenceImage({
               url: data.image_url,
               name: data.name || "Imagem de referência",
-              user_email: data.user_email,
               user_id: data.user_id
             });
           }
@@ -70,10 +69,7 @@ export default function CreateImagePage() {
 
   const selectedStyle = styles?.find(style => style.id === selectedStyleId);
 
-  const getUserDisplayName = (userEmail?: string, userId?: string) => {
-    if (userEmail) {
-      return userEmail.split('@')[0];
-    }
+  const getUserDisplayName = (userId?: string) => {
     return `Usuário ${userId?.slice(0, 8) || 'Anônimo'}`;
   };
 
@@ -340,15 +336,24 @@ export default function CreateImagePage() {
                 <p className="text-sm font-medium mb-2 text-center text-muted-foreground">
                   📸 {referenceImage.name}
                 </p>
-                {(referenceImage.user_email || referenceImage.user_id) && (
+                {referenceImage.user_id && (
                   <div className="flex items-center justify-center text-xs text-muted-foreground mb-2">
                     <User className="h-3 w-3 mr-1" />
-                    <span>Criado por: {getUserDisplayName(referenceImage.user_email, referenceImage.user_id)}</span>
+                    <span>Criado por: {getUserDisplayName(referenceImage.user_id)}</span>
                   </div>
                 )}
-                <p className="text-xs text-center text-muted-foreground">
+                <p className="text-xs text-center text-muted-foreground mb-4">
                   Esta imagem será usada como referência para gerar uma nova
                 </p>
+                <div className="flex justify-center">
+                  <Button 
+                    onClick={() => handleDownload(referenceImage.url, referenceImage.name)} 
+                    variant="outline"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Baixar imagem de referência
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="text-center p-8">
