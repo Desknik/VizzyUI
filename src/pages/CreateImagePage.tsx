@@ -14,15 +14,17 @@ import { Sparkles, ArrowLeft, Download, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import LoginModal from "@/components/auth/LoginModal";
 import CommunityImageCard from "@/components/community/CommunityImageCard";
-
 export default function CreateImagePage() {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const styleId = searchParams.get("style");
   const referenceId = searchParams.get("reference");
-  
-  const { data: styles } = useBackgroundStyles();
+  const {
+    data: styles
+  } = useBackgroundStyles();
   const [selectedStyleId, setSelectedStyleId] = useState<string>(styleId || "");
   const [customPrompt, setCustomPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -30,29 +32,30 @@ export default function CreateImagePage() {
   const [generatedImageName, setGeneratedImageName] = useState<string>("");
   const [improvedPrompt, setImprovedPrompt] = useState<string>("");
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [referenceImage, setReferenceImage] = useState<{url: string, name: string, user_id?: string, style_id?: string} | null>(null);
+  const [referenceImage, setReferenceImage] = useState<{
+    url: string;
+    name: string;
+    user_id?: string;
+    style_id?: string;
+  } | null>(null);
 
   // Fetch related images based on reference
-  const { data: relatedImages } = useCommunityBackgrounds(
-    referenceImage?.style_id || undefined
-  );
-
+  const {
+    data: relatedImages
+  } = useCommunityBackgrounds(referenceImage?.style_id || undefined);
   useEffect(() => {
     if (styleId) {
       setSelectedStyleId(styleId);
     }
   }, [styleId]);
-
   useEffect(() => {
     const fetchReferenceImage = async () => {
       if (referenceId) {
         try {
-          const { data, error } = await supabase
-            .from("background_images")
-            .select("*")
-            .eq("id", referenceId)
-            .single();
-
+          const {
+            data,
+            error
+          } = await supabase.from("background_images").select("*").eq("id", referenceId).single();
           if (error) throw error;
           if (data) {
             if (data.style_id) {
@@ -71,22 +74,17 @@ export default function CreateImagePage() {
         }
       }
     };
-
     fetchReferenceImage();
   }, [referenceId]);
-
   const selectedStyle = styles?.find(style => style.id === selectedStyleId);
-
   const getUserDisplayName = (userId?: string) => {
     return `Usuário ${userId?.slice(0, 8) || 'Anônimo'}`;
   };
-
   const handleDownload = async (imageUrl: string, imageName: string) => {
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      
       const link = document.createElement("a");
       link.href = url;
       link.download = `background-${imageName || 'generated'}.png`;
@@ -94,32 +92,26 @@ export default function CreateImagePage() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
       toast.success("Download iniciado!");
     } catch (error) {
       toast.error("Erro ao fazer download da imagem");
       console.error(error);
     }
   };
-
   const generateImage = async () => {
     // Verificar se é prompt personalizado e se o usuário está logado
     if (customPrompt && !selectedStyleId && !user) {
       setShowLoginModal(true);
       return;
     }
-
     if (!selectedStyleId && !customPrompt) {
       toast.error("Selecione um estilo ou forneça um prompt personalizado");
       return;
     }
-
     setIsGenerating(true);
     try {
       const webhookUrl = "https://vizzyui-n8n.fragments.com.br/webhook-test/c8390b0e-4bfa-43ff-8f4b-95724870f72c";
-      
       let finalPrompt = "";
-      
       if (selectedStyleId && selectedStyle) {
         // Se tem estilo selecionado
         if (customPrompt) {
@@ -133,7 +125,6 @@ export default function CreateImagePage() {
         // Apenas prompt personalizado
         finalPrompt = customPrompt;
       }
-
       const requestBody = {
         user: user?.id || null,
         styleName: selectedStyle?.name || null,
@@ -141,21 +132,17 @@ export default function CreateImagePage() {
         stylePrompt: selectedStyle?.prompt || null,
         prompt: finalPrompt
       };
-
       console.log("Enviando requisição para webhook:", requestBody);
-
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(requestBody)
       });
-
       if (!response.ok) {
         throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
       }
-
       const data = await response.json();
       console.log("Resposta do webhook:", data);
 
@@ -171,33 +158,30 @@ export default function CreateImagePage() {
       }
     } catch (error: any) {
       console.error("Erro ao gerar imagem:", error);
-      toast.error("Erro ao gerar imagem", { description: error.message });
+      toast.error("Erro ao gerar imagem", {
+        description: error.message
+      });
     } finally {
       setIsGenerating(false);
     }
   };
-
   const saveImage = async () => {
     if (!generatedImage) return;
-    
     try {
-      const { data, error } = await supabase
-        .from("background_images")
-        .insert({
-          image_url: generatedImage,
-          prompt: improvedPrompt || customPrompt || (selectedStyle?.prompt || ""),
-          name: generatedImageName,
-          style_id: selectedStyleId || null,
-          user_id: user?.id || null,
-          is_public: true
-        })
-        .select()
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from("background_images").insert({
+        image_url: generatedImage,
+        prompt: improvedPrompt || customPrompt || selectedStyle?.prompt || "",
+        name: generatedImageName,
+        style_id: selectedStyleId || null,
+        user_id: user?.id || null,
+        is_public: true
+      }).select().single();
       if (error) throw error;
-      
       toast.success("Imagem salva com sucesso!");
-      
+
       // Redireciona para a página de detalhes do estilo ou para a página de histórico
       if (selectedStyleId) {
         navigate(`/styles/${selectedStyleId}`);
@@ -205,15 +189,15 @@ export default function CreateImagePage() {
         navigate("/history");
       }
     } catch (error: any) {
-      toast.error("Erro ao salvar imagem", { description: error.message });
+      toast.error("Erro ao salvar imagem", {
+        description: error.message
+      });
     }
   };
 
   // Filter related images to exclude the reference image
   const filteredRelatedImages = relatedImages?.filter(img => img.id !== referenceId) || [];
-
-  return (
-    <div className="container py-8">
+  return <div className="container py-8">
       <Button variant="ghost" asChild className="mb-4">
         <Link to={selectedStyleId ? `/styles/${selectedStyleId}` : "/styles"}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -231,30 +215,23 @@ export default function CreateImagePage() {
           <div className="space-y-6">
             <div>
               <Label htmlFor="style">Estilo</Label>
-              <Select
-                value={selectedStyleId}
-                onValueChange={(value) => {
-                  setSelectedStyleId(value);
-                  // Limpar o prompt personalizado quando um estilo é selecionado
-                  if (value) setCustomPrompt("");
-                }}
-              >
+              <Select value={selectedStyleId} onValueChange={value => {
+              setSelectedStyleId(value);
+              // Limpar o prompt personalizado quando um estilo é selecionado
+              if (value) setCustomPrompt("");
+            }}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione um estilo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {styles?.map((style) => (
-                    <SelectItem key={style.id} value={style.id}>
+                  {styles?.map(style => <SelectItem key={style.id} value={style.id}>
                       {style.name}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
-              {selectedStyle && (
-                <p className="text-sm text-muted-foreground mt-2">
+              {selectedStyle && <p className="text-sm text-muted-foreground mt-2">
                   {selectedStyle.description}
-                </p>
-              )}
+                </p>}
             </div>
 
             <div className="flex items-center">
@@ -265,70 +242,39 @@ export default function CreateImagePage() {
 
             <div>
               <Label htmlFor="customPrompt">Prompt personalizado</Label>
-              <Textarea
-                id="customPrompt"
-                placeholder="Descreva o background que você deseja gerar..."
-                value={customPrompt}
-                onChange={(e) => {
-                  setCustomPrompt(e.target.value);
-                  // Limpar o estilo selecionado quando um prompt personalizado é inserido
-                  if (e.target.value) setSelectedStyleId("");
-                }}
-                className="min-h-[120px]"
-              />
-              {customPrompt && !user && (
-                <p className="text-sm text-amber-600 mt-2">
+              <Textarea id="customPrompt" placeholder="Descreva o background que você deseja gerar..." value={customPrompt} onChange={e => {
+              setCustomPrompt(e.target.value);
+              // Limpar o estilo selecionado quando um prompt personalizado é inserido
+              if (e.target.value) setSelectedStyleId("");
+            }} className="min-h-[120px]" />
+              {customPrompt && !user && <p className="text-sm text-amber-600 mt-2">
                   ⚠️ Você precisa estar logado para criar backgrounds com prompt personalizado
-                </p>
-              )}
+                </p>}
             </div>
 
-            <Button 
-              onClick={generateImage} 
-              disabled={isGenerating || (!selectedStyleId && !customPrompt)}
-              className="w-full"
-            >
-              {isGenerating ? (
-                <>Gerando...</>
-              ) : (
-                <>
+            <Button onClick={generateImage} disabled={isGenerating || !selectedStyleId && !customPrompt} className="w-full">
+              {isGenerating ? <>Gerando...</> : <>
                   <Sparkles className="mr-2 h-4 w-4" />
                   Gerar imagem
-                </>
-              )}
+                </>}
             </Button>
           </div>
         </div>
 
         <div>
           <Card className="overflow-hidden h-full flex items-center justify-center">
-            {generatedImage ? (
-              <div className="p-4 w-full">
-                <img 
-                  src={generatedImage} 
-                  alt={generatedImageName || "Background gerado"} 
-                  className="w-full rounded-md mb-4" 
-                />
-                {generatedImageName && (
-                  <p className="text-sm font-medium mb-2">{generatedImageName}</p>
-                )}
-                {user && (
-                  <div className="flex items-center text-xs text-muted-foreground mb-2">
+            {generatedImage ? <div className="p-4 w-full">
+                <img src={generatedImage} alt={generatedImageName || "Background gerado"} className="w-full rounded-md mb-4" />
+                {generatedImageName && <p className="text-sm font-medium mb-2">{generatedImageName}</p>}
+                {user && <div className="flex items-center text-xs text-muted-foreground mb-2">
                     <User className="h-3 w-3 mr-1" />
                     <span>Criado por: {user.email?.split('@')[0] || 'Você'}</span>
-                  </div>
-                )}
-                {improvedPrompt && improvedPrompt !== (customPrompt || selectedStyle?.prompt) && (
-                  <p className="text-xs text-muted-foreground mb-4">
+                  </div>}
+                {improvedPrompt && improvedPrompt !== (customPrompt || selectedStyle?.prompt) && <p className="text-xs text-muted-foreground mb-4">
                     <strong>Prompt melhorado:</strong> {improvedPrompt}
-                  </p>
-                )}
+                  </p>}
                 <div className="flex gap-2">
-                  <Button 
-                    onClick={() => handleDownload(generatedImage, generatedImageName)} 
-                    variant="outline" 
-                    className="flex-1"
-                  >
+                  <Button onClick={() => handleDownload(generatedImage, generatedImageName)} variant="outline" className="flex-1">
                     <Download className="mr-2 h-4 w-4" />
                     Baixar
                   </Button>
@@ -336,38 +282,25 @@ export default function CreateImagePage() {
                     Salvar imagem
                   </Button>
                 </div>
-              </div>
-            ) : referenceImage ? (
-              <div className="p-4 w-full">
-                <img 
-                  src={referenceImage.url} 
-                  alt={referenceImage.name} 
-                  className="w-full rounded-md mb-4" 
-                />
+              </div> : referenceImage ? <div className="p-4 w-full">
+                <img src={referenceImage.url} alt={referenceImage.name} className="w-full rounded-md mb-4" />
                 <p className="text-sm font-medium mb-2 text-center text-muted-foreground">
                   📸 {referenceImage.name}
                 </p>
-                {referenceImage.user_id && (
-                  <div className="flex items-center justify-center text-xs text-muted-foreground mb-2">
+                {referenceImage.user_id && <div className="flex items-center justify-center text-xs text-muted-foreground mb-2">
                     <User className="h-3 w-3 mr-1" />
                     <span>Criado por: {getUserDisplayName(referenceImage.user_id)}</span>
-                  </div>
-                )}
+                  </div>}
                 <p className="text-xs text-center text-muted-foreground mb-4">
                   Esta imagem será usada como referência para gerar uma nova
                 </p>
                 <div className="flex justify-center">
-                  <Button 
-                    onClick={() => handleDownload(referenceImage.url, referenceImage.name)} 
-                    variant="outline"
-                  >
+                  <Button onClick={() => handleDownload(referenceImage.url, referenceImage.name)} variant="outline" className="w-full">
                     <Download className="mr-2 h-4 w-4" />
                     Baixar imagem de referência
                   </Button>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center p-8">
+              </div> : <div className="text-center p-8">
                 <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg font-medium mb-2">
                   A visualização da imagem aparecerá aqui
@@ -375,30 +308,21 @@ export default function CreateImagePage() {
                 <p className="text-muted-foreground">
                   Selecione um estilo ou forneça um prompt personalizado e clique em "Gerar imagem"
                 </p>
-              </div>
-            )}
+              </div>}
           </Card>
         </div>
       </div>
 
       {/* Related Images Section */}
-      {referenceImage && filteredRelatedImages.length > 0 && (
-        <div className="mt-12">
+      {referenceImage && filteredRelatedImages.length > 0 && <div className="mt-12">
           <h2 className="text-2xl font-semibold mb-6">
             {referenceImage.style_id ? 'Outras imagens do mesmo estilo' : 'Outras imagens do mesmo usuário'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredRelatedImages.slice(0, 8).map((image) => (
-              <CommunityImageCard key={image.id} image={image} />
-            ))}
+            {filteredRelatedImages.slice(0, 8).map(image => <CommunityImageCard key={image.id} image={image} />)}
           </div>
-        </div>
-      )}
+        </div>}
 
-      <LoginModal 
-        open={showLoginModal} 
-        onOpenChange={setShowLoginModal} 
-      />
-    </div>
-  );
+      <LoginModal open={showLoginModal} onOpenChange={setShowLoginModal} />
+    </div>;
 }
