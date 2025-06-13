@@ -109,26 +109,47 @@ export type Database = {
       }
       profiles: {
         Row: {
+          api_access: boolean
           avatar_url: string | null
           created_at: string
           id: string
           name: string | null
+          plan: string
+          playground_access: boolean
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_end: string | null
+          subscription_status: string | null
           tokens: number
           updated_at: string
         }
         Insert: {
+          api_access?: boolean
           avatar_url?: string | null
           created_at?: string
           id: string
           name?: string | null
+          plan?: string
+          playground_access?: boolean
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end?: string | null
+          subscription_status?: string | null
           tokens?: number
           updated_at?: string
         }
         Update: {
+          api_access?: boolean
           avatar_url?: string | null
           created_at?: string
           id?: string
           name?: string | null
+          plan?: string
+          playground_access?: boolean
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end?: string | null
+          subscription_status?: string | null
           tokens?: number
           updated_at?: string
         }
@@ -141,6 +162,24 @@ export type Database = {
     Functions: {
       consume_token: {
         Args: { user_id: string }
+        Returns: boolean
+      }
+      reset_monthly_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_user_plan: {
+        Args: {
+          user_id: string
+          new_plan: string
+          new_tokens: number
+          api_access_enabled: boolean
+          playground_access_enabled: boolean
+          customer_id?: string
+          subscription_id?: string
+          sub_status?: string
+          sub_end?: string
+        }
         Returns: boolean
       }
     }

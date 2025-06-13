@@ -1,16 +1,18 @@
 
 import { Button } from "@/components/ui/button";
-import { Sparkles, Palette, Image, Moon, Sun, History, User, LogOut } from "lucide-react";
+import { Sparkles, Palette, Image, Moon, Sun, History, User, LogOut, Credit Card } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import TokenDisplay from "@/components/profile/TokenDisplay";
+import PlanBadge from "@/components/subscription/PlanBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -64,10 +66,10 @@ export default function Navbar() {
               <span>Gradientes</span>
             </Button>
           </Link>
-          <Link to="/styles">
+          <Link to="/pricing">
             <Button variant="ghost" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              <span>AI Backgrounds</span>
+              <Credit Card className="h-4 w-4" />
+              <span>Planos</span>
             </Button>
           </Link>
 
@@ -89,16 +91,29 @@ export default function Navbar() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <div className="px-2 py-1.5 text-sm font-medium">
-                    {profile?.name || user.email?.split('@')[0]}
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5">
+                    <div className="text-sm font-medium">
+                      {profile?.name || user.email?.split('@')[0]}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <PlanBadge plan={profile?.plan || 'free'} />
+                    </div>
                   </div>
+                  <DropdownMenuSeparator />
+                  <Link to="/pricing">
+                    <DropdownMenuItem>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      <span>Planos & Assinaturas</span>
+                    </DropdownMenuItem>
+                  </Link>
                   <Link to="/history">
                     <DropdownMenuItem>
                       <History className="mr-2 h-4 w-4" />
                       <span>Histórico</span>
                     </DropdownMenuItem>
                   </Link>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sair</span>

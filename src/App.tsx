@@ -14,6 +14,7 @@ import StyleDetailPage from "./pages/StyleDetailPage";
 import CreateImagePage from "./pages/CreateImagePage";
 import UserHistoryPage from "./pages/UserHistoryPage";
 import AuthPage from "./pages/AuthPage";
+import PricingPage from "./pages/PricingPage";
 import ProfileSetupModal from "./components/profile/ProfileSetupModal";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ function AppContent() {
           <Route path="/create-image" element={<CreateImagePage />} />
           <Route path="/history" element={<UserHistoryPage />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
