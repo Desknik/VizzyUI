@@ -26,42 +26,44 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-
+    const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const { data } = await supabaseClient.auth.getUser(token);
+    const user = data.user;
     
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) {
+      throw new Error("User not authenticated or email not available");
+    }
 
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Buscar customer_id do usuário
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('stripe_customer_id')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile?.stripe_customer_id) {
-      throw new Error("No Stripe customer found for this user");
+    const stripeSecretKey = Deno.env.get("stripe_secret_key");
+    if (!stripeSecretKey) {
+      throw new Error("Stripe secret key not configured");
     }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
+    const stripe = new Stripe(stripeSecretKey, { 
       apiVersion: "2023-10-16" 
     });
 
-    const origin = req.headers.get("origin") || "https://localhost:3000";
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: profile.stripe_customer_id,
-      return_url: `${origin}/pricing`,
+    // Encontrar customer do Stripe
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    
+    if (customers.data.length === 0) {
+      throw new Error("No Stripe customer found for this user");
+    }
+
+    const customerId = customers.data[0].id;
+    logStep("Found customer", { customerId });
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${req.headers.get("origin")}/pricing`,
     });
 
-    logStep("Portal session created", { sessionId: portalSession.id });
+    logStep("Customer portal session created", { sessionId: session.id });
 
-    return new Response(JSON.stringify({ url: portalSession.url }), {
+    return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

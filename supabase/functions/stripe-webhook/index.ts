@@ -48,7 +48,12 @@ serve(async (req) => {
   try {
     logStep("Webhook received");
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripeSecretKey = Deno.env.get("stripe_secret_key");
+    if (!stripeSecretKey) {
+      throw new Error("Stripe secret key not configured");
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -59,10 +64,15 @@ serve(async (req) => {
       throw new Error("No signature provided");
     }
 
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    if (!webhookSecret) {
+      throw new Error("Webhook secret not configured");
+    }
+
     const event = stripe.webhooks.constructEvent(
       body,
       signature,
-      Deno.env.get("STRIPE_WEBHOOK_SECRET") || ""
+      webhookSecret
     );
 
     logStep("Event type", { type: event.type });

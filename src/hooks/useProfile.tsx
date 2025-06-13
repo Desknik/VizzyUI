@@ -9,6 +9,13 @@ interface Profile {
   name: string | null;
   avatar_url: string | null;
   tokens: number;
+  plan: string;
+  api_access: boolean;
+  playground_access: boolean;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: string | null;
+  subscription_end: string | null;
   created_at: string;
   updated_at: string;
 }

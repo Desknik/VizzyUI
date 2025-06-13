@@ -43,7 +43,12 @@ serve(async (req) => {
 
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
+    const stripeSecretKey = Deno.env.get("stripe_secret_key");
+    if (!stripeSecretKey) {
+      throw new Error("Stripe secret key not configured");
+    }
+
+    const stripe = new Stripe(stripeSecretKey, { 
       apiVersion: "2023-10-16" 
     });
 
