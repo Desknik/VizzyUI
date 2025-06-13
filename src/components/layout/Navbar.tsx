@@ -4,6 +4,9 @@ import { Sparkles, Palette, Image, Moon, Sun, History, User, LogOut } from "luci
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import TokenDisplay from "@/components/profile/TokenDisplay";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +17,7 @@ import {
 export default function Navbar() {
   const [theme, setTheme] = useState("light");
   const { user, signOut } = useAuth();
+  const { profile } = useProfile();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "light";
@@ -26,6 +30,15 @@ export default function Navbar() {
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -63,25 +76,36 @@ export default function Navbar() {
           </Button>
 
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <Link to="/history">
-                  <DropdownMenuItem>
-                    <History className="mr-2 h-4 w-4" />
-                    <span>Histórico</span>
+            <div className="flex items-center gap-3">
+              <TokenDisplay />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 rounded-full p-0">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile?.avatar_url || ''} alt={profile?.name || user.email || ''} />
+                      <AvatarFallback className="text-xs">
+                        {profile?.name ? getInitials(profile.name) : <User className="h-4 w-4" />}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <div className="px-2 py-1.5 text-sm font-medium">
+                    {profile?.name || user.email?.split('@')[0]}
+                  </div>
+                  <Link to="/history">
+                    <DropdownMenuItem>
+                      <History className="mr-2 h-4 w-4" />
+                      <span>Histórico</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuItem onClick={signOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
                   </DropdownMenuItem>
-                </Link>
-                <DropdownMenuItem onClick={signOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sair</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ) : (
             <Link to="/auth">
               <Button variant="outline" size="sm">

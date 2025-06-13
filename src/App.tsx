@@ -8,14 +8,40 @@ import Layout from "./components/layout/Layout";
 import Index from "./pages/Index";
 import GradientsPage from "./pages/GradientsPage";
 import NotFound from "./pages/NotFound";
-import { AuthProvider } from "./hooks/useAuth";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
 import StylesListPage from "./pages/StylesListPage";
 import StyleDetailPage from "./pages/StyleDetailPage";
 import CreateImagePage from "./pages/CreateImagePage";
 import UserHistoryPage from "./pages/UserHistoryPage";
 import AuthPage from "./pages/AuthPage";
+import ProfileSetupModal from "./components/profile/ProfileSetupModal";
 
 const queryClient = new QueryClient();
+
+function AppContent() {
+  const { showProfileSetup, setShowProfileSetup } = useAuth();
+
+  return (
+    <>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/gradients" element={<GradientsPage />} />
+          <Route path="/styles" element={<StylesListPage />} />
+          <Route path="/styles/:styleId" element={<StyleDetailPage />} />
+          <Route path="/create-image" element={<CreateImagePage />} />
+          <Route path="/history" element={<UserHistoryPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Layout>
+      <ProfileSetupModal 
+        open={showProfileSetup} 
+        onOpenChange={setShowProfileSetup} 
+      />
+    </>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -24,18 +50,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/gradients" element={<GradientsPage />} />
-              <Route path="/styles" element={<StylesListPage />} />
-              <Route path="/styles/:styleId" element={<StyleDetailPage />} />
-              <Route path="/create-image" element={<CreateImagePage />} />
-              <Route path="/history" element={<UserHistoryPage />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
+          <AppContent />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
