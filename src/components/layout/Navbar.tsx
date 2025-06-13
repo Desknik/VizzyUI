@@ -1,6 +1,5 @@
-
 import { Button } from "@/components/ui/button";
-import { Sparkles, Palette, Image, Moon, Sun, History, User, LogOut, Credit Card } from "lucide-react";
+import { Sparkles, Palette, Image, Moon, Sun, History, User, LogOut, CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -68,7 +67,7 @@ export default function Navbar() {
           </Link>
           <Link to="/pricing">
             <Button variant="ghost" className="flex items-center gap-2">
-              <Credit Card className="h-4 w-4" />
+              <CreditCard className="h-4 w-4" />
               <span>Planos</span>
             </Button>
           </Link>
