@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -25,17 +25,7 @@ export function useProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-
-    fetchProfile();
-  }, [user]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -53,9 +43,19 @@ export function useProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const updateProfile = async (updates: Partial<Pick<Profile, 'name' | 'avatar_url'>>) => {
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+
+    fetchProfile();
+  }, [user, fetchProfile]);
+
+  const updateProfile = useCallback(async (updates: Partial<Pick<Profile, 'name' | 'avatar_url'>>) => {
     if (!user) return false;
 
     try {
@@ -77,9 +77,9 @@ export function useProfile() {
       toast.error('Erro ao atualizar perfil');
       return false;
     }
-  };
+  }, [user, fetchProfile]);
 
-  const consumeToken = async () => {
+  const consumeToken = useCallback(async () => {
     if (!user) return false;
 
     try {
@@ -101,7 +101,7 @@ export function useProfile() {
       toast.error('Erro ao processar token');
       return false;
     }
-  };
+  }, [user, fetchProfile]);
 
   return {
     profile,
