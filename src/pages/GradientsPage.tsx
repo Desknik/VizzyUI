@@ -1,14 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Copy, Download, RefreshCw, Wand2, Palette, Circle, CircleHelp, CircleDot, Diamond, Triangle, TriangleRight, Hexagon, SquareDot } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Copy,
+  Download,
+  RefreshCw,
+  Wand2,
+  Palette,
+  Circle,
+  CircleHelp,
+  CircleDot,
+  Diamond,
+  Triangle,
+  TriangleRight,
+  Hexagon,
+  SquareDot,
+  Check,
+  Type,
+  ArrowUpDown,
+  FileCode,
+  FileText,
+  Square,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface GradientColor {
   color: string;
@@ -21,26 +62,42 @@ interface GradientPreset {
   angle: number;
 }
 
-type GradientType = "linear" | "radial" | "conic";
-type ColorHarmony = "shades" | "complementary" | "analogous" | "triadic" | "split-complementary" | "tetradic" | "square" | "rectangular";
+type GradientType = "linear" | "radial" | "conic" | "complex";
+type ColorHarmony =
+  | "monochromatic"
+  | "analogous"
+  | "complementary"
+  | "triadic"
+  | "tetradic"
+  | "splitComplementary";
 
 export default function GradientsPage() {
-  const { toast } = useToast();
   const [angle, setAngle] = useState(90);
-  const [outputType, setOutputType] = useState<"css" | "tailwind" | "text-gradient">("css");
+  const [outputType, setOutputType] = useState<
+    "css" | "tailwind" | "text-gradient"
+  >("css");
   const [colors, setColors] = useState<GradientColor[]>([
     { color: "#9b87f5", position: 0 },
     { color: "#4EB3AF", position: 100 },
   ]);
   const [gradientType, setGradientType] = useState<GradientType>("linear");
-  const [editorMode, setEditorMode] = useState<"simple" | "advanced">("simple");
-  
-  // Simple editor state
   const [baseColor, setBaseColor] = useState("#9b87f5");
-  const [colorGap, setColorGap] = useState(30);
-  const [saturation, setSaturation] = useState(80);
-  const [colorHarmony, setColorHarmony] = useState<ColorHarmony>("shades");
-  
+  const [colorHarmony, setColorHarmony] =
+    useState<ColorHarmony>("monochromatic");
+  const [currentPalette, setCurrentPalette] = useState<string[]>([]);
+  const [currentGradient, setCurrentGradient] = useState("");
+  const [sampleText, setSampleText] = useState("Texto com Gradiente");
+  const [fontSize, setFontSize] = useState(48);
+  const [fontWeight, setFontWeight] = useState(700);
+  const [showCopiedIndicator, setShowCopiedIndicator] = useState<string | null>(
+    null
+  );
+  const [isHovering, setIsHovering] = useState(false);
+  const [displayMode, setDisplayMode] = useState<"background" | "text">(
+    "background"
+  );
+  const [textColor, setTextColor] = useState("white");
+
   const gradientPresets: GradientPreset[] = [
     {
       name: "Roxo ao Teal",
@@ -76,175 +133,357 @@ export default function GradientsPage() {
       ],
       angle: 135,
     },
-    {
-      name: "Verão Tropical",
-      colors: [
-        { color: "#ff9a9e", position: 0 },
-        { color: "#fad0c4", position: 100 },
-      ],
-      angle: 90,
-    },
-    {
-      name: "Limão e Menta",
-      colors: [
-        { color: "#a8ff78", position: 0 },
-        { color: "#78ffd6", position: 100 },
-      ],
-      angle: 60,
-    },
   ];
+
+  // Função para converter HSL para HEX
+  const hslToHex = (h: number, s: number, l: number) => {
+    l /= 100;
+    const a = (s * Math.min(l, 1 - l)) / 100;
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color)
+        .toString(16)
+        .padStart(2, "0");
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  };
+
+  // Função para converter HEX para HSL
+  const hexToHsl = (hex: string) => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0,
+      s = 0;
+    const l = (max + min) / 2;
+
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r:
+          h = (g - b) / d + (g < b ? 6 : 0);
+          break;
+        case g:
+          h = (b - r) / d + 2;
+          break;
+        case b:
+          h = (r - g) / d + 4;
+          break;
+      }
+      h /= 6;
+    }
+
+    return {
+      h: Math.round(h * 360),
+      s: Math.round(s * 100),
+      l: Math.round(l * 100),
+    };
+  };
+
+  // Gerar paletas de cores baseadas em harmonias
+  const generateColorPalette = (baseColor: string, harmony: ColorHarmony) => {
+    const hsl = hexToHsl(baseColor);
+    const colors: string[] = [];
+
+    switch (harmony) {
+      case "monochromatic":
+        for (let i = 0; i < 6; i++) {
+          const lightness = Math.max(10, Math.min(90, hsl.l + (i - 2) * 15));
+          colors.push(hslToHex(hsl.h, hsl.s, lightness));
+        }
+        break;
+
+      case "analogous":
+        for (let i = 0; i < 6; i++) {
+          const hue = (hsl.h + (i - 2) * 30 + 360) % 360;
+          colors.push(hslToHex(hue, hsl.s, hsl.l));
+        }
+        break;
+
+      case "complementary":
+        colors.push(baseColor);
+        colors.push(hslToHex((hsl.h + 180) % 360, hsl.s, hsl.l));
+        for (let i = 0; i < 4; i++) {
+          const lightness = 20 + i * 20;
+          colors.push(hslToHex(hsl.h, hsl.s, lightness));
+        }
+        break;
+
+      case "triadic":
+        colors.push(baseColor);
+        colors.push(hslToHex((hsl.h + 120) % 360, hsl.s, hsl.l));
+        colors.push(hslToHex((hsl.h + 240) % 360, hsl.s, hsl.l));
+        for (let i = 0; i < 3; i++) {
+          const lightness = 30 + i * 25;
+          colors.push(hslToHex(hsl.h, hsl.s * 0.7, lightness));
+        }
+        break;
+
+      case "tetradic":
+        colors.push(baseColor);
+        colors.push(hslToHex((hsl.h + 90) % 360, hsl.s, hsl.l));
+        colors.push(hslToHex((hsl.h + 180) % 360, hsl.s, hsl.l));
+        colors.push(hslToHex((hsl.h + 270) % 360, hsl.s, hsl.l));
+        colors.push(hslToHex(hsl.h, hsl.s * 0.5, hsl.l * 0.7));
+        colors.push(hslToHex(hsl.h, hsl.s * 0.8, hsl.l * 1.2));
+        break;
+
+      case "splitComplementary":
+        colors.push(baseColor);
+        colors.push(hslToHex((hsl.h + 150) % 360, hsl.s, hsl.l));
+        colors.push(hslToHex((hsl.h + 210) % 360, hsl.s, hsl.l));
+        for (let i = 0; i < 3; i++) {
+          const lightness = 25 + i * 25;
+          colors.push(hslToHex(hsl.h, hsl.s, lightness));
+        }
+        break;
+    }
+
+    return colors;
+  };
+
+  // Gerar diferentes tipos de gradientes
+  const generateGradientCSS = (colors: string[], type: GradientType) => {
+    const shuffledColors = [...colors].sort(() => Math.random() - 0.5);
+    const selectedColors = shuffledColors.slice(
+      0,
+      Math.max(2, Math.min(4, colors.length))
+    );
+
+    switch (type) {
+      case "linear": {
+        const angle = Math.floor(Math.random() * 360);
+        return `linear-gradient(${angle}deg, ${selectedColors.join(", ")})`;
+      }
+      case "radial": {
+        const positions = [
+          "circle at center",
+          "circle at top left",
+          "circle at top right",
+          "circle at bottom left",
+          "circle at bottom right",
+        ];
+        const position =
+          positions[Math.floor(Math.random() * positions.length)];
+        return `radial-gradient(${position}, ${selectedColors.join(", ")})`;
+      }
+      case "conic": {
+        const conicAngle = Math.floor(Math.random() * 360);
+        return `conic-gradient(from ${conicAngle}deg, ${selectedColors.join(", ")})`;
+      }
+      case "complex": {
+        // Diferentes tipos de gradientes complexos (SEM cônico)
+        const complexTypes = [
+          // Linear + Radial
+          () => {
+            const bg1 = `linear-gradient(${Math.floor(
+              Math.random() * 360
+            )}deg, ${selectedColors.slice(0, 2).join(", ")})`;
+            const bg2 = `radial-gradient(circle at ${Math.floor(
+              Math.random() * 100
+            )}% ${Math.floor(Math.random() * 100)}%, ${selectedColors
+              .slice(-2)
+              .join(", ")})`;
+            return `${bg1}, ${bg2}`;
+          },
+          // Múltiplos radiais
+          () => {
+            const bg1 = `radial-gradient(circle at 20% 80%, ${selectedColors[0]}40, transparent 50%)`;
+            const bg2 = `radial-gradient(circle at 80% 20%, ${selectedColors[1]}40, transparent 50%)`;
+            const bg3 = `radial-gradient(circle at 40% 40%, ${
+              selectedColors[2]
+            }, ${selectedColors[3] || selectedColors[0]})`;
+            return `${bg1}, ${bg2}, ${bg3}`;
+          },
+          // Linear + Multiple Radials
+          () => {
+            const bg1 = `linear-gradient(${Math.floor(
+              Math.random() * 360
+            )}deg, ${selectedColors.slice(0, 2).join("40, ")}40)`;
+            const bg2 = `radial-gradient(circle at 25% 25%, ${selectedColors[2]}60, transparent 40%)`;
+            const bg3 = `radial-gradient(circle at 75% 75%, ${
+              selectedColors[3] || selectedColors[0]
+            }60, transparent 40%)`;
+            return `${bg1}, ${bg2}, ${bg3}`;
+          },
+          // Padrão de ondas com linear e radial
+          () => {
+            const bg1 = `linear-gradient(45deg, ${selectedColors[0]} 25%, transparent 25%)`;
+            const bg2 = `linear-gradient(-45deg, ${selectedColors[1]} 25%, transparent 25%)`;
+            const bg3 = `radial-gradient(circle, ${selectedColors[2]}, ${selectedColors[0]}80)`;
+            return `${bg1}, ${bg2}, ${bg3}`;
+          },
+        ];
+
+        const randomComplexType =
+          complexTypes[Math.floor(Math.random() * complexTypes.length)];
+        return randomComplexType();
+      }
+      default:
+        return selectedColors.join(", ");
+    }
+  };
+
+  // Função principal para gerar gradiente
+  const generateGradient = () => {
+    const palette = generateColorPalette(baseColor, colorHarmony);
+    const gradient = generateGradientCSS(palette, gradientType);
+
+    setCurrentPalette(palette);
+    setCurrentGradient(gradient);
+
+    // Converter palette para formato de colors
+    const newColors = palette.slice(0, 4).map((color, index) => ({
+      color,
+      position: (index * 100) / (palette.slice(0, 4).length - 1),
+    }));
+    setColors(newColors);
+  };
 
   const applyPreset = (preset: GradientPreset) => {
     setColors([...preset.colors]);
     setAngle(preset.angle);
-    setEditorMode("advanced");
-    toast({
-      title: "Preset aplicado",
-      description: `Gradiente "${preset.name}" aplicado com sucesso.`,
-    });
-  };
-
-  const addColor = () => {
-    if (colors.length < 5) {
-      const newColor = {
-        color: getRandomColor(),
-        position: 50,
-      };
-      setColors([...colors, newColor]);
-    }
-  };
-
-  const removeColor = (index: number) => {
-    if (colors.length > 2) {
-      const newColors = [...colors];
-      newColors.splice(index, 1);
-      setColors(newColors);
-    }
-  };
-
-  const updateColor = (index: number, color: string) => {
-    const newColors = [...colors];
-    newColors[index].color = color;
-    setColors(newColors);
-  };
-
-  const updatePosition = (index: number, position: number) => {
-    const newColors = [...colors];
-    newColors[index].position = position;
-    setColors(newColors);
   };
 
   const getRandomColor = () => {
-    return "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+    return (
+      "#" +
+      Math.floor(Math.random() * 16777215)
+        .toString(16)
+        .padStart(6, "0")
+    );
   };
 
   const generateRandomGradient = () => {
-    const numberOfColors = Math.floor(Math.random() * 3) + 2; // 2-4 colors
-    const newColors: GradientColor[] = [];
-    
-    for (let i = 0; i < numberOfColors; i++) {
-      newColors.push({
-        color: getRandomColor(),
-        position: i === 0 ? 0 : i === numberOfColors - 1 ? 100 : Math.floor(Math.random() * 80) + 10,
-      });
-    }
-    
-    // Sort by position
-    newColors.sort((a, b) => a.position - b.position);
-    
-    setColors(newColors);
-    setAngle(Math.floor(Math.random() * 360));
-    
-    // Randomly select gradient type
-    const types: GradientType[] = ["linear", "radial", "conic"];
-    setGradientType(types[Math.floor(Math.random() * types.length)]);
-    
-    toast({
-      title: "Gradiente aleatório",
-      description: "Um novo gradiente aleatório foi gerado.",
-    });
-  };
+    const harmonies: ColorHarmony[] = [
+      "monochromatic",
+      "analogous",
+      "complementary",
+      "triadic",
+      "tetradic",
+      "splitComplementary",
+    ];
+    const randomHarmony =
+      harmonies[Math.floor(Math.random() * harmonies.length)];
+    const randomColor = getRandomColor();
 
-  const changeGradientType = () => {
-    const types: GradientType[] = ["linear", "radial", "conic"];
-    const currentIndex = types.indexOf(gradientType);
-    const nextIndex = (currentIndex + 1) % types.length;
-    setGradientType(types[nextIndex]);
+    setBaseColor(randomColor);
+    setColorHarmony(randomHarmony);
+
+    // Também randomizar o tipo de gradiente
+    const types: GradientType[] = ["linear", "radial", "conic", "complex"];
+    setGradientType(types[Math.floor(Math.random() * types.length)]);
+
+    setTimeout(() => generateGradient(), 100);
   };
 
   const generateCSS = () => {
+    if (currentGradient) {
+      return `background: ${currentGradient};`;
+    }
+
     const sortedColors = [...colors].sort((a, b) => a.position - b.position);
-    const colorStops = sortedColors.map((color) => `${color.color} ${color.position}%`).join(", ");
-    
+    const colorStops = sortedColors
+      .map((color) => `${color.color} ${color.position}%`)
+      .join(", ");
+
     if (gradientType === "linear") {
       return `background: linear-gradient(${angle}deg, ${colorStops});`;
     } else if (gradientType === "radial") {
       return `background: radial-gradient(circle, ${colorStops});`;
-    } else {
+    } else if (gradientType === "conic") {
       return `background: conic-gradient(from ${angle}deg, ${colorStops});`;
+    } else {
+      return `background: ${
+        currentGradient || `linear-gradient(${angle}deg, ${colorStops})`
+      };`;
     }
   };
 
   const generateTailwind = () => {
     const sortedColors = [...colors].sort((a, b) => a.position - b.position);
-    
+
     if (gradientType === "linear") {
       let direction = "to-r";
       if (angle >= 45 && angle < 135) direction = "to-b";
       else if (angle >= 135 && angle < 225) direction = "to-l";
       else if (angle >= 225 && angle < 315) direction = "to-t";
-      
+
       return `bg-gradient-${direction} from-[${sortedColors[0].color}] ${
         sortedColors.length > 2 ? `via-[${sortedColors[1].color}] ` : ""
       }to-[${sortedColors[sortedColors.length - 1].color}]`;
     } else {
-      // Tailwind doesn't have built-in classes for radial/conic gradients
-      // so return a note about using the CSS version
       return `/* Tailwind CSS não tem classes nativas para gradientes ${gradientType}s */
-/* Use a versão CSS abaixo com a classe 'bg-[image:...]' */
-bg-[image:${gradientType}-gradient(${gradientType === "radial" ? "circle" : `from ${angle}deg`}, ${sortedColors.map(c => `${c.color} ${c.position}%`).join(", ")})]`;
+/* Use a versão CSS abaixo */
+${generateCSS()}`;
     }
   };
 
   const generateTextGradient = () => {
-    const sortedColors = [...colors].sort((a, b) => a.position - b.position);
-    const colorStops = sortedColors.map((color) => `${color.color} ${color.position}%`).join(", ");
-    
-    let gradientCSS = "";
-    if (gradientType === "linear") {
-      gradientCSS = `linear-gradient(${angle}deg, ${colorStops})`;
-    } else if (gradientType === "radial") {
-      gradientCSS = `radial-gradient(circle, ${colorStops})`;
-    } else {
-      gradientCSS = `conic-gradient(from ${angle}deg, ${colorStops})`;
-    }
-    
+    const css = generateCSS();
     return `
 /* CSS */
-background: ${gradientCSS};
+${css}
 -webkit-background-clip: text;
 -webkit-text-fill-color: transparent;
+background-clip: text;
 
-/* Tailwind */
-bg-clip-text text-transparent bg-[image:${gradientCSS}]
+/* Para uso em texto */
+.gradient-text {
+  ${css}
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 `;
   };
 
-  const copyToClipboard = () => {
-    let code;
-    if (outputType === "css") {
-      code = generateCSS();
-    } else if (outputType === "tailwind") {
-      code = generateTailwind();
+  const generateTailwindTextGradient = () => {
+    const sortedColors = [...colors].sort((a, b) => a.position - b.position);
+
+    if (gradientType === "linear") {
+      let direction = "to-r";
+      if (angle >= 45 && angle < 135) direction = "to-b";
+      else if (angle >= 135 && angle < 225) direction = "to-l";
+      else if (angle >= 225 && angle < 315) direction = "to-t";
+
+      return `bg-gradient-${direction} from-[${sortedColors[0].color}] ${
+        sortedColors.length > 2 ? `via-[${sortedColors[1].color}] ` : ""
+      }to-[${
+        sortedColors[sortedColors.length - 1].color
+      }] text-transparent bg-clip-text`;
     } else {
-      code = generateTextGradient();
+      return `/* Tailwind não suporta gradientes ${gradientType}s para texto diretamente */
+/* Use classes utilitárias e estilos personalizados */
+bg-clip-text text-transparent [background:${
+        currentGradient || getGradientBackgroundValue()
+      }]`;
     }
-    
-    navigator.clipboard.writeText(code);
-    toast({
-      title: "Copiado!",
-      description: "O código foi copiado para a área de transferência.",
-    });
+  };
+
+  const copyToClipboard = (type: string = outputType) => {
+    let code;
+    if (type === "css") {
+      code = generateCSS();
+    } else if (type === "tailwind") {
+      code = generateTailwind();
+    } else if (type === "text-gradient") {
+      code = generateTextGradient();
+    } else if (type === "text-tailwind") {
+      code = generateTailwindTextGradient();
+    }
+
+    navigator.clipboard.writeText(code || "");
+    setShowCopiedIndicator(type);
+
+    setTimeout(() => {
+      setShowCopiedIndicator(null);
+    }, 2000);
   };
 
   const downloadGradient = () => {
@@ -252,31 +491,33 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
     canvas.width = 1200;
     canvas.height = 630;
     const ctx = canvas.getContext("2d");
-    
+
     if (ctx) {
       let gradient;
       const sortedColors = [...colors].sort((a, b) => a.position - b.position);
-      
-      if (gradientType === "linear") {
+
+      if (gradientType === "linear" || gradientType === "complex") {
         gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
       } else if (gradientType === "radial") {
         gradient = ctx.createRadialGradient(
-          canvas.width / 2, canvas.height / 2, 0,
-          canvas.width / 2, canvas.height / 2, canvas.width / 2
+          canvas.width / 2,
+          canvas.height / 2,
+          0,
+          canvas.width / 2,
+          canvas.height / 2,
+          canvas.width / 2
         );
       } else {
-        // For conic gradient, we need to use a workaround since there's no native conic gradient
-        // We'll simulate it by creating many small linear gradients
         gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
       }
-      
+
       sortedColors.forEach((color) => {
         gradient.addColorStop(color.position / 100, color.color);
       });
-      
+
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       const link = document.createElement("a");
       link.download = `gradient-${gradientType}.png`;
       link.href = canvas.toDataURL("image/png");
@@ -284,528 +525,477 @@ bg-clip-text text-transparent bg-[image:${gradientCSS}]
     }
   };
 
-  // Function to convert hex to HSL
-  const hexToHsl = (hex: string) => {
-    const r = parseInt(hex.slice(1, 3), 16) / 255;
-    const g = parseInt(hex.slice(3, 5), 16) / 255;
-    const b = parseInt(hex.slice(5, 7), 16) / 255;
-    
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      
-      switch (max) {
-        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-        case g: h = (b - r) / d + 2; break;
-        case b: h = (r - g) / d + 4; break;
-      }
-      
-      h *= 60;
+  const getGradientBackgroundValue = () => {
+    if (currentGradient) {
+      return currentGradient;
     }
-    
-    return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+
+    const sortedColors = [...colors].sort((a, b) => a.position - b.position);
+    const colorStops = sortedColors
+      .map((color) => `${color.color} ${color.position}%`)
+      .join(", ");
+
+    if (gradientType === "linear") {
+      return `linear-gradient(${angle}deg, ${colorStops})`;
+    } else if (gradientType === "radial") {
+      return `radial-gradient(circle, ${colorStops})`;
+    } else if (gradientType === "conic") {
+      return `conic-gradient(from ${angle}deg, ${colorStops})`;
+    } else {
+      return currentGradient || `linear-gradient(${angle}deg, ${colorStops})`;
+    }
   };
 
-  // Function to convert HSL to Hex
-  const hslToHex = (h: number, s: number, l: number) => {
-    h = h % 360;
-    s = s / 100;
-    l = l / 100;
-    const a = s * Math.min(l, 1 - l);
-    const f = (n: number) => {
-      const k = (n + h / 30) % 12;
-      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-      return Math.round(255 * color).toString(16).padStart(2, '0');
+  const getGradientStyle = () => {
+    return {
+      background: getGradientBackgroundValue(),
     };
-    return `#${f(0)}${f(4)}${f(8)}`;
   };
 
-  // Generate a color palette based on harmony
-  const generatePaletteFromColor = () => {
-    const [h, s, l] = hexToHsl(baseColor);
-    const newColors: GradientColor[] = [];
+  const getHoverGradientStyle = () => {
+    const isDarkMode =
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const baseOverlay = isDarkMode
+      ? "linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1))"
+      : "linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))";
 
-    switch (colorHarmony) {
-      case "shades":
-        // Generate different shades/tints of the same color
-        for (let i = 0; i < 5; i++) {
-          const position = (i * 100) / 4;
-          const lightness = Math.max(10, Math.min(90, l - 30 + (i * 15)));
-          newColors.push({
-            color: hslToHex(h, Math.min(100, s + saturation - 80), lightness),
-            position,
-          });
-        }
-        break;
-      
-      case "complementary":
-        // Base color and its complement (opposite on color wheel)
-        newColors.push({ color: baseColor, position: 0 });
-        newColors.push({ color: hslToHex((h + 180) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
-        break;
-      
-      case "analogous":
-        // Colors adjacent to each other on the color wheel
-        for (let i = 0; i < 5; i++) {
-          const position = (i * 100) / 4;
-          const hue = (h + (i - 2) * colorGap) % 360;
-          newColors.push({
-            color: hslToHex(hue, Math.min(100, s + saturation - 80), l),
-            position,
-          });
-        }
-        break;
-      
-      case "triadic":
-        // Three colors evenly spaced on the color wheel (120° apart)
-        newColors.push({ color: baseColor, position: 0 });
-        newColors.push({ color: hslToHex((h + 120) % 360, Math.min(100, s + saturation - 80), l), position: 50 });
-        newColors.push({ color: hslToHex((h + 240) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
-        break;
-      
-      case "split-complementary":
-        // Base color and two colors adjacent to its complement
-        newColors.push({ color: baseColor, position: 0 });
-        newColors.push({ color: hslToHex((h + 150) % 360, Math.min(100, s + saturation - 80), l), position: 50 });
-        newColors.push({ color: hslToHex((h + 210) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
-        break;
-      
-      case "tetradic":
-        // Four colors evenly spaced on the color wheel
-        newColors.push({ color: baseColor, position: 0 });
-        newColors.push({ color: hslToHex((h + 90) % 360, Math.min(100, s + saturation - 80), l), position: 33 });
-        newColors.push({ color: hslToHex((h + 180) % 360, Math.min(100, s + saturation - 80), l), position: 67 });
-        newColors.push({ color: hslToHex((h + 270) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
-        break;
-      
-      case "square":
-        // Four colors spaced 90° apart on the color wheel
-        newColors.push({ color: baseColor, position: 0 });
-        newColors.push({ color: hslToHex((h + 90) % 360, Math.min(100, s + saturation - 80), l), position: 33 });
-        newColors.push({ color: hslToHex((h + 180) % 360, Math.min(100, s + saturation - 80), l), position: 67 });
-        newColors.push({ color: hslToHex((h + 270) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
-        break;
-      
-      case "rectangular":
-        // Two complementary pairs
-        newColors.push({ color: baseColor, position: 0 });
-        newColors.push({ color: hslToHex((h + 60) % 360, Math.min(100, s + saturation - 80), l), position: 33 });
-        newColors.push({ color: hslToHex((h + 180) % 360, Math.min(100, s + saturation - 80), l), position: 67 });
-        newColors.push({ color: hslToHex((h + 240) % 360, Math.min(100, s + saturation - 80), l), position: 100 });
-        break;
-      
-      default:
-        // Default to shades
-        for (let i = 0; i < 5; i++) {
-          const position = (i * 100) / 4;
-          const lightness = Math.max(10, Math.min(90, l - 30 + (i * 15)));
-          newColors.push({
-            color: hslToHex(h, Math.min(100, s + saturation - 80), lightness),
-            position,
-          });
-        }
+    return {
+      background: `${baseOverlay}, ${getGradientBackgroundValue()}`,
+      transition: "all 0.3s ease",
+    };
+  };
+
+  const getBackgroundGradientStyle = () => {
+    return {
+      background: getGradientBackgroundValue(),
+    };
+  };
+
+  const getTextGradientContainerStyle = () => {
+    return {
+      background: "linear-gradient(135deg, #ffffff, #d8d0fb)",
+    };
+  };
+
+  // CORREÇÃO PRINCIPAL: Função corrigida para texto com gradiente
+  const getTextGradientStyle = () => {
+    return {
+      background: getGradientBackgroundValue(),
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      backgroundClip: "text",
+      fontSize: `${fontSize}px`,
+      fontWeight: fontWeight,
+      lineHeight: 1.2,
+      // Adiciona propriedades para garantir que o gradiente funcione
+      display: "inline-block",
+      backgroundSize: "100% 100%",
+    };
+  };
+
+  const toggleDisplayMode = () => {
+    setDisplayMode((prev) => (prev === "background" ? "text" : "background"));
+  };
+
+  const calculateTextColor = () => {
+    if (gradientType === "complex" || !colors.length) {
+      return "white";
     }
-    
-    // Sort by position and set colors
-    newColors.sort((a, b) => a.position - b.position);
-    setColors(newColors);
-    setEditorMode("advanced");
-    
-    toast({
-      title: "Paleta gerada",
-      description: `Paleta de cores baseada em ${colorHarmony} gerada com sucesso.`,
-    });
-  };
 
-  const gradientStyle = {
-    background: gradientType === "linear"
-      ? `linear-gradient(${angle}deg, ${colors
-          .map((color) => `${color.color} ${color.position}%`)
-          .join(", ")})`
-      : gradientType === "radial"
-      ? `radial-gradient(circle, ${colors
-          .map((color) => `${color.color} ${color.position}%`)
-          .join(", ")})`
-      : `conic-gradient(from ${angle}deg, ${colors
-          .map((color) => `${color.color} ${color.position}%`)
-          .join(", ")})`,
-  };
-
-  // Calculate if text should be white or black based on gradient darkness
-  const getTextColor = (colors: GradientColor[]) => {
-    // Simple approach: Check if the average color is dark
-    const isColorDark = (hex: string) => {
-      const r = parseInt(hex.substring(1, 3), 16);
-      const g = parseInt(hex.substring(3, 5), 16);
-      const b = parseInt(hex.substring(5, 7), 16);
+    let totalBrightness = 0;
+    for (const { color } of colors) {
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
       const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-      return brightness < 128;
-    };
-    
-    // Count how many colors are dark
-    const darkCount = colors.filter(c => isColorDark(c.color)).length;
-    return darkCount > colors.length / 2 ? "text-white" : "text-black";
+      totalBrightness += brightness;
+    }
+
+    const avgBrightness = totalBrightness / colors.length;
+    return avgBrightness > 128 ? "rgba(0,0,0,0.8)" : "white";
   };
 
-  // Icon mapping for color harmony types
-  const getHarmonyIcon = (harmony: ColorHarmony) => {
-    switch (harmony) {
-      case "shades":
-        return <CircleHelp className="h-4 w-4" />;
-      case "complementary":
-        return <Circle className="h-4 w-4" />;
-      case "analogous":
-        return <CircleDot className="h-4 w-4" />;
-      case "triadic":
-        return <Triangle className="h-4 w-4" />;
-      case "split-complementary":
-        return <TriangleRight className="h-4 w-4" />;
-      case "tetradic":
-        return <Diamond className="h-4 w-4" />;
-      case "square":
-        return <SquareDot className="h-4 w-4" />;
-      case "rectangular":
-        return <Hexagon className="h-4 w-4" />;
-      default:
-        return <Palette className="h-4 w-4" />;
-    }
+  useEffect(() => {
+    setTextColor(calculateTextColor());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colors, gradientType, currentGradient]);
+
+  const getHarmonyName = (harmony: ColorHarmony) => {
+    const names = {
+      monochromatic: "Monocromática",
+      analogous: "Análoga",
+      complementary: "Complementar",
+      triadic: "Tríade",
+      tetradic: "Tetrádica",
+      splitComplementary: "Split-Complementar",
+    };
+    return names[harmony] || harmony;
+  };
+
+  const getTypeName = (type: GradientType) => {
+    const names = {
+      linear: "Linear",
+      radial: "Radial",
+      conic: "Cônico",
+      complex: "Complexo",
+    };
+    return names[type];
   };
 
   return (
     <div className="container my-8">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold tracking-tight">Gerador de Gradientes</h1>
+          <h1 className="text-4xl font-bold tracking-tight">
+            Gerador de Gradientes
+          </h1>
           <p className="mt-2 text-lg text-muted-foreground">
             Crie gradientes impressionantes para seus projetos
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-5">
-          <div className="md:col-span-3">
+        <div className="grid gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Personalizar Gradiente</CardTitle>
+                <CardTitle>Gerador Inteligente</CardTitle>
                 <CardDescription>
-                  Ajuste as cores e o ângulo para criar seu gradiente perfeito
+                  Selecione uma cor base e harmonia para gerar gradientes
+                  automaticamente
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="simple" onValueChange={(value) => setEditorMode(value as "simple" | "advanced")}>
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="simple">Simples</TabsTrigger>
-                    <TabsTrigger value="advanced">Avançado</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="simple" className="space-y-6">
-                    <div>
-                      <h3 className="mb-2 font-medium">Cor Base</h3>
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="h-8 w-8 rounded-full border" 
-                          style={{ backgroundColor: baseColor }}
-                        />
-                        <Input
-                          type="color"
-                          value={baseColor}
-                          onChange={(e) => setBaseColor(e.target.value)}
-                          className="h-10 w-20"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="mb-2 font-medium">Tipo de Harmonia de Cores</h3>
-                      <RadioGroup 
-                        className="grid grid-cols-2 gap-2"
-                        value={colorHarmony}
-                        onValueChange={(value) => setColorHarmony(value as ColorHarmony)}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="shades" id="shades" />
-                          <Label htmlFor="shades" className="flex items-center gap-1">
-                            <CircleHelp className="h-4 w-4" /> Tons
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="complementary" id="complementary" />
-                          <Label htmlFor="complementary" className="flex items-center gap-1">
-                            <Circle className="h-4 w-4" /> Complementar
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="analogous" id="analogous" />
-                          <Label htmlFor="analogous" className="flex items-center gap-1">
-                            <CircleDot className="h-4 w-4" /> Análogas
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="triadic" id="triadic" />
-                          <Label htmlFor="triadic" className="flex items-center gap-1">
-                            <Triangle className="h-4 w-4" /> Tríades
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="split-complementary" id="split-complementary" />
-                          <Label htmlFor="split-complementary" className="flex items-center gap-1">
-                            <TriangleRight className="h-4 w-4" /> Split Complementar
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="tetradic" id="tetradic" />
-                          <Label htmlFor="tetradic" className="flex items-center gap-1">
-                            <Diamond className="h-4 w-4" /> Tetrádica
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="square" id="square" />
-                          <Label htmlFor="square" className="flex items-center gap-1">
-                            <SquareDot className="h-4 w-4" /> Quadrado
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="rectangular" id="rectangular" />
-                          <Label htmlFor="rectangular" className="flex items-center gap-1">
-                            <Hexagon className="h-4 w-4" /> Retangular
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    
-                    <div>
-                      <h3 className="mb-2 font-medium">Distância entre Cores: {colorGap}°</h3>
-                      <Slider
-                        value={[colorGap]}
-                        min={10}
-                        max={90}
-                        step={1}
-                        onValueChange={(value) => setColorGap(value[0])}
+              <CardContent className="space-y-6">
+                {/* Cor Base */}
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">
+                    Cor Base
+                  </Label>
+                  <div className="relative flex items-center gap-3">
+                    <div
+                      className="h-12 w-12 rounded-full border-2 border-input shadow-sm cursor-pointer transition-transform hover:scale-110"
+                      style={{ backgroundColor: baseColor }}
+                      onClick={() =>
+                        document.getElementById("baseColorInput")?.click()
+                      }
+                    />
+                    <div className="absolute top-full mt-2">
+                      <Input
+                        id="baseColorInput"
+                        type="color"
+                        value={baseColor}
+                        onChange={(e) => setBaseColor(e.target.value)}
+                        className="h-12 w-20 cursor-pointer hidden"
                       />
                     </div>
-                    
-                    <div>
-                      <h3 className="mb-2 font-medium">Saturação: {saturation}%</h3>
-                      <Slider
-                        value={[saturation]}
-                        min={40}
-                        max={120}
-                        step={1}
-                        onValueChange={(value) => setSaturation(value[0])}
-                      />
-                    </div>
-                    
-                    <Button 
-                      className="w-full"
-                      onClick={generatePaletteFromColor}
-                    >
-                      <Palette className="mr-2 h-4 w-4" />
-                      Gerar Paleta
-                    </Button>
-                  </TabsContent>
-                  
-                  <TabsContent value="advanced" className="space-y-6">
-                    <div>
-                      <div className="mb-4 flex justify-between">
-                        <h3 className="font-medium">Cores</h3>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={addColor} 
-                          disabled={colors.length >= 5}
-                        >
-                          Adicionar Cor
-                        </Button>
-                      </div>
-                      <div className="space-y-3">
-                        {colors.map((color, index) => (
-                          <div key={index} className="flex items-center gap-3">
-                            <div 
-                              className="h-8 w-8 rounded-full border" 
-                              style={{ backgroundColor: color.color }}
-                            />
-                            <Input
-                              type="color"
-                              value={color.color}
-                              onChange={(e) => updateColor(index, e.target.value)}
-                              className="h-10 w-20"
-                            />
-                            <div className="flex-1">
-                              <Slider
-                                value={[color.position]}
-                                min={0}
-                                max={100}
-                                step={1}
-                                onValueChange={(value) => updatePosition(index, value[0])}
-                              />
-                            </div>
-                            <div className="w-12 text-center text-sm">
-                              {color.position}%
-                            </div>
-                            {colors.length > 2 && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeColor(index)}
-                                className="h-8 w-8 p-0"
-                              >
-                                &times;
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <Input
+                      type="text"
+                      value={baseColor}
+                      onChange={(e) => setBaseColor(e.target.value)}
+                      className="flex-1 font-mono "
+                      placeholder="#9b87f5"
+                    />
+                  </div>
+                </div>
 
-                    <div>
-                      <h3 className="mb-2 font-medium">Ângulo: {angle}°</h3>
-                      <Slider
-                        value={[angle]}
-                        min={0}
-                        max={360}
-                        step={1}
-                        onValueChange={(value) => setAngle(value[0])}
-                      />
+                <div className="flex items-center gap-3">
+                  {/* Harmonia de Cores */}
+                  <div className="w-full">
+                    <Label className="text-sm font-medium mb-3 block">
+                      Harmonia de Cores
+                    </Label>
+                    <Select
+                      value={colorHarmony}
+                      onValueChange={(value: ColorHarmony) =>
+                        setColorHarmony(value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a harmonia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monochromatic">
+                          <div className="flex items-center gap-2">
+                            <CircleHelp className="h-4 w-4" />
+                            Monocromática
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="analogous">
+                          <div className="flex items-center gap-2">
+                            <CircleDot className="h-4 w-4" />
+                            Análoga
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="complementary">
+                          <div className="flex items-center gap-2">
+                            <Circle className="h-4 w-4" />
+                            Complementar
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="triadic">
+                          <div className="flex items-center gap-2">
+                            <Triangle className="h-4 w-4" />
+                            Tríade
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="tetradic">
+                          <div className="flex items-center gap-2">
+                            <Diamond className="h-4 w-4" />
+                            Tetrádica
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="splitComplementary">
+                          <div className="flex items-center gap-2">
+                            <TriangleRight className="h-4 w-4" />
+                            Split-Complementar
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Tipo de Gradiente */}
+                  <div className="w-full">
+                    <Label className="text-sm font-medium mb-3 block">
+                      Tipo de Gradiente
+                    </Label>
+                    <Select
+                      value={gradientType}
+                      onValueChange={(value: GradientType) =>
+                        setGradientType(value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="linear">Linear</SelectItem>
+                        <SelectItem value="radial">Radial</SelectItem>
+                        <SelectItem value="conic">Cônico</SelectItem>
+                        <SelectItem value="complex">
+                          Complexo (Linear + Radial)
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Paleta de Cores Gerada */}
+                {currentPalette.length > 0 && (
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">
+                      Paleta Gerada
+                    </Label>
+                    <div className="flex gap-2 flex-wrap">
+                      {currentPalette.map((color, index) => (
+                        <div
+                          key={index}
+                          className="h-12 w-12 rounded-lg border-2 border-gray-300 shadow-sm cursor-pointer transition-transform hover:scale-110"
+                          style={{ backgroundColor: color }}
+                          title={color}
+                          onClick={() => navigator.clipboard.writeText(color)}
+                        />
+                      ))}
                     </div>
-                  </TabsContent>
-                </Tabs>
+                  </div>
+                )}
+
+                {/* Ângulo para Linear/Cônico */}
+                {(gradientType === "linear" || gradientType === "conic") && (
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">
+                      Ângulo: {angle}°
+                    </Label>
+                    <Slider
+                      value={[angle]}
+                      min={0}
+                      max={360}
+                      step={1}
+                      onValueChange={(value) => setAngle(value[0])}
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button 
-                  variant="outline" 
-                  onClick={generateRandomGradient}
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Gerar Aleatório
-                </Button>
-                <Button 
-                  onClick={generatePaletteFromColor}
-                >
+              <CardFooter className="flex gap-3">
+                <Button onClick={generateGradient} className="flex-1">
                   <Palette className="mr-2 h-4 w-4" />
-                  {editorMode === "simple" ? "Gerar Paleta" : "Aplicar Harmonia"}
+                  Gerar Gradiente
+                </Button>
+                <Button variant="outline" onClick={generateRandomGradient}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Aleatório
                 </Button>
               </CardFooter>
             </Card>
           </div>
 
-          <div className="md:col-span-2">
-            <Card className="h-full">
-              <div className="h-40 w-full relative" style={gradientStyle}>
-                <div className="absolute top-2 right-2 flex gap-2">
+          <div className="lg:col-span-1">
+            <Card className="h-fit overflow-hidden">
+              <div
+                className={cn(
+                  "h-48 sm:h-64 w-full relative rounded-t-lg overflow-hidden transition-all duration-500 ease-out",
+                  displayMode === "background" ? "group" : ""
+                )}
+                style={
+                  displayMode === "background"
+                    ? getBackgroundGradientStyle()
+                    : getTextGradientContainerStyle()
+                }
+                onMouseEnter={() => setIsHovering(true)}
+                onMouseLeave={() => setIsHovering(false)}
+              >
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {displayMode === "text" ? (
+                    // MODO TEXTO: Sempre aplica o gradiente ao texto
+                    <div
+                      className="text-center transition-all duration-500 ease-out transform opacity-100 scale-100"
+                      style={{
+                        textShadow:
+                          "0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)",
+                        transition: "all 0.5s ease-out",
+                      }}
+                    >
+                      <div
+                        className="text-lg font-semibold"
+                        style={getTextGradientStyle()}
+                      >
+                        {getTypeName(gradientType)}
+                      </div>
+                      <div
+                        className="text-sm opacity-90"
+                        style={getTextGradientStyle()}
+                      >
+                        {getHarmonyName(colorHarmony)}
+                      </div>
+                    </div>
+                  ) : (
+                    // MODO BACKGROUND: Mostra texto normal quando hover
+                    isHovering && (
+                      <div
+                        className="text-center transition-all duration-500 ease-out transform drop-shadow-lg opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100"
+                        style={{
+                          color: textColor,
+                          textShadow:
+                            "0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2)",
+                        }}
+                      >
+                        <div className="text-lg font-semibold">
+                          {getTypeName(gradientType)}
+                        </div>
+                        <div className="text-sm opacity-90">
+                          {getHarmonyName(colorHarmony)}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+                <div className="absolute top-3 right-3 flex gap-2">
                   <Button
+                    size="sm"
                     variant="secondary"
-                    size="icon"
-                    className="rounded-full bg-white/70 backdrop-blur-sm hover:bg-white"
-                    onClick={changeGradientType}
-                    title="Alterar tipo de gradiente"
+                    onClick={toggleDisplayMode}
+                    className={cn(
+                      "backdrop-blur-sm transition-all duration-300 ease-out hover:scale-105",
+                      displayMode === "text"
+                        ? "bg-black/10 hover:bg-black/20 text-gray-800 hover:text-gray-900"
+                        : "bg-white/20 hover:bg-white/30 text-white hover:text-white"
+                    )}
+                    title={
+                      displayMode === "background"
+                        ? "Mostrar texto com gradiente"
+                        : "Mostrar gradiente"
+                    }
+                  >
+                    {displayMode === "background" ? (
+                      <Type className="h-4 w-4" />
+                    ) : (
+                      <Square className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={generateGradient}
+                    className={cn(
+                      "backdrop-blur-sm transition-all duration-300 ease-out hover:scale-105",
+                      displayMode === "text"
+                        ? "bg-black/10 hover:bg-black/20 text-gray-800 hover:text-gray-900"
+                        : "bg-white/20 hover:bg-white/30 text-white hover:text-white"
+                    )}
                   >
                     <Wand2 className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="rounded-full bg-white/70 backdrop-blur-sm hover:bg-white"
-                    onClick={generateRandomGradient}
-                    title="Gerar gradiente aleatório"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
-              <CardContent className="pt-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <Select value={gradientType} onValueChange={(value) => setGradientType(value as GradientType)}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Tipo de Gradiente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="linear">Linear</SelectItem>
-                      <SelectItem value="radial">Radial</SelectItem>
-                      <SelectItem value="conic">Cônico</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Tabs defaultValue="css" onValueChange={(value) => setOutputType(value as "css" | "tailwind" | "text-gradient")}>
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="css">CSS</TabsTrigger>
-                    <TabsTrigger value="tailwind">Tailwind</TabsTrigger>
-                    <TabsTrigger value="text-gradient">Text</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="css" className="mt-4">
-                    <pre className="rounded-md bg-muted p-4 text-sm">
-                      {generateCSS()}
-                    </pre>
-                  </TabsContent>
-                  <TabsContent value="tailwind" className="mt-4">
-                    <pre className="rounded-md bg-muted p-4 text-sm">
-                      {generateTailwind()}
-                    </pre>
-                  </TabsContent>
-                  <TabsContent value="text-gradient" className="mt-4">
-                    <pre className="rounded-md bg-muted p-4 text-sm whitespace-pre-wrap">
-                      {generateTextGradient()}
-                    </pre>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="secondary" onClick={copyToClipboard}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copiar
-                </Button>
-                <Button onClick={downloadGradient}>
+
+              <CardFooter className="flex gap-2 p-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="flex-1 transition-all duration-200 hover:scale-[1.02]"
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copiar Código
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuLabel>Escolha o formato</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="font-normal text-xs text-muted-foreground">
+                        Gradiente para Background
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => copyToClipboard("css")}
+                        className="transition-colors duration-200"
+                      >
+                        <FileCode className="mr-2 h-4 w-4" />
+                        <span>CSS</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => copyToClipboard("tailwind")}
+                        className="transition-colors duration-200"
+                      >
+                        <FileCode className="mr-2 h-4 w-4" />
+                        <span>Tailwind CSS</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="font-normal text-xs text-muted-foreground">
+                        Gradiente para Texto
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => copyToClipboard("text-gradient")}
+                        className="transition-colors duration-200"
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>CSS</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => copyToClipboard("text-tailwind")}
+                        className="transition-colors duration-200"
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Tailwind CSS</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Button
+                  onClick={downloadGradient}
+                  className="flex-1 transition-all duration-200 hover:scale-[1.02]"
+                >
                   <Download className="mr-2 h-4 w-4" />
                   Download
                 </Button>
               </CardFooter>
             </Card>
-          </div>
-        </div>
-        
-        <div className="mt-8">
-          <h2 className="mb-4 text-xl font-semibold">Gradientes Pré-definidos</h2>
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {gradientPresets.map((preset, index) => {
-              const gradientCSS = {
-                background: `linear-gradient(${preset.angle}deg, ${preset.colors
-                  .map((color) => `${color.color} ${color.position}%`)
-                  .join(", ")})`,
-              };
-              const textColorClass = getTextColor(preset.colors);
-              
-              return (
-                <Card 
-                  key={index} 
-                  className="gradient-card overflow-hidden cursor-pointer transition-transform hover:scale-105 group"
-                  onClick={() => applyPreset(preset)}
-                >
-                  <div 
-                    className="gradient-preview h-24 w-full relative flex items-center justify-center" 
-                    style={gradientCSS}
-                  >
-                    <div 
-                      className={`text-center font-handwritten text-2xl ${textColorClass} text-shadow-sm transition-all duration-300 group-hover:bg-clip-text group-hover:text-transparent`}
-                      style={{ 
-                        backgroundImage: `linear-gradient(${preset.angle}deg, ${preset.colors
-                          .map((color) => `${color.color} ${color.position}%`)
-                          .join(", ")})`,
-                        textShadow: "0px 1px 2px rgba(0,0,0,0.2)"
-                      }}
-                    >
-                      {preset.name}
-                    </div>
-                    <div 
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ background: "linear-gradient(120deg, #ffffff 0%, #f5f5f5 100%)" }}
-                    ></div>
-                  </div>
-                </Card>
-              );
-            })}
           </div>
         </div>
       </div>
