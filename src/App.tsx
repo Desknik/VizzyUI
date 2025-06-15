@@ -16,6 +16,7 @@ import UserHistoryPage from "./pages/UserHistoryPage";
 import AuthPage from "./pages/AuthPage";
 import PricingPage from "./pages/PricingPage";
 import ProfileSetupModal from "./components/profile/ProfileSetupModal";
+import SuccessPage from "./pages/SuccessPage";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ function AppContent() {
           <Route path="/history" element={<UserHistoryPage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/success" element={<SuccessPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
