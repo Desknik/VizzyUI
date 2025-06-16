@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import { useBackgroundStyle } from "@/hooks/useBackgroundStyles";
 import { useCommunityBackgrounds } from "@/hooks/useCommunityBackgrounds";
@@ -7,11 +6,12 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import CommunityImageCard from "@/components/community/CommunityImageCard";
 import StyleCard from "@/components/styles/StyleCard";
+import { useBackgroundImages } from "@/hooks/useBackgroundImages";
 
 export default function StyleDetailPage() {
   const { styleId } = useParams<{ styleId: string }>();
   const { data: style, isLoading: isLoadingStyle } = useBackgroundStyle(styleId!);
-  const { data: communityImages, isLoading: isLoadingCommunity } = useCommunityBackgrounds(styleId);
+  const { data: communityImages, isLoading: isLoadingCommunity } = useBackgroundImages(styleId);
 
   if (isLoadingStyle) {
     return (
@@ -91,7 +91,15 @@ export default function StyleDetailPage() {
         ) : communityImages && communityImages.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {communityImages.map((image) => (
-              <CommunityImageCard key={image.id} image={image} />
+              <CommunityImageCard
+                key={image.id}
+                image={{
+                  ...image,
+                  name: null,
+                  user_email: undefined
+                }}
+                showStyleButton={false}
+              />
             ))}
           </div>
         ) : (

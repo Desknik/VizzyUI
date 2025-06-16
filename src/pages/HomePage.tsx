@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Image, Palette, Sparkles } from "lucide-react";
@@ -49,7 +48,7 @@ export default function HomePage() {
           <p className="text-center mb-8 text-muted-foreground max-w-2xl mx-auto">
             Explore nossa coleção de estilos de imagens para gerar fundos impressionantes para seus projetos.
           </p>
-          <StyleCarousel />
+          <StyleCarousel autoScroll />
           <div className="mt-8 text-center">
             <Link to="/styles">
               <Button variant="outline" size="lg">

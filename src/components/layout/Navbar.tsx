@@ -48,7 +48,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-designer-purple" />
           <Link to="/" className="text-xl font-bold">
-            BackgroundAI
+            VizzyUI
           </Link>
         </div>
 
@@ -63,12 +63,6 @@ export default function Navbar() {
             <Button variant="ghost" className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               <span>Gradientes</span>
-            </Button>
-          </Link>
-          <Link to="/pricing">
-            <Button variant="ghost" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span>Planos</span>
             </Button>
           </Link>
 
@@ -91,7 +85,7 @@ export default function Navbar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5">
+                  <div className="flex items-center justify-between flex-wrap px-2 py-1.5">
                     <div className="text-sm font-medium">
                       {profile?.name || user.email?.split('@')[0]}
                     </div>

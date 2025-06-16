@@ -153,7 +153,7 @@ export default function PricingPage() {
     const currentPriceInfo = plan.pricing[billingCycle];
 
     return (
-      <Card key={plan.id} className={`relative flex flex-col ${plan.popular ? 'border-primary shadow-lg' : ''} ${isCurrentPlan ? 'ring-2 ring-primary' : ''}`}>
+      <Card key={plan.id} className={`relative flex flex-col justify-center items-center ${plan.popular ? 'border-primary shadow-lg' : ''} ${isCurrentPlan ? 'ring-2 ring-primary' : ''}`}>
         {plan.popular && (
           <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2">
             Mais Popular
@@ -175,7 +175,7 @@ export default function PricingPage() {
           <CardDescription>{plan.description}</CardDescription>
         </CardHeader>
 
-        <CardContent className="pt-0 flex flex-col flex-grow">
+        <CardContent className="w-full max-w-lg pt-0 flex flex-col flex-grow">
           <ul className="space-y-2 mb-6 flex-grow">
             {plan.features.map((feature, index) => (
               <li key={index} className="flex items-center gap-2 text-sm">
@@ -259,7 +259,6 @@ export default function PricingPage() {
       </div>
       
       <div className="relative my-12">
-        <Separator />
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
           <div className="w-full border-t border-border" />
         </div>
@@ -270,7 +269,7 @@ export default function PricingPage() {
       
       {devPlan && (
         <div className="flex justify-center">
-          <div className="w-full max-w-md">
+          <div className="w-full">
             {renderPlanCard(devPlan)}
           </div>
         </div>
